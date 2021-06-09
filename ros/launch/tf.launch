@@ -1,9 +1,27 @@
 <!-- tf -->
 <launch >
-    <node name="odom2_to_camera_world" pkg="tf" type="static_transform_publisher" args="0 0 0 0 0 0 /odom2 /camera_world 100" />
-    <node name="camera_world_to_map" pkg="tf" type="static_transform_publisher" args="0 0 0 1.5707963268 -1.5707963268 0 /camera_world /map 100" />
+    <arg name="use_pose_fuser" default="true" />
 
-    <node name="orb_frame_to_base_link" pkg="tf" type="static_transform_publisher" args="0 0 0 0 0 0 /orb_slam2/camera /base_link 100" />
+    <!--
+        /camera_world is the origin of ORB SLAM on the camera coordinates.
+        Position of the /map is same to that of /camera_world, but orientations are different.
+     -->
+    <node name="camera_world_to_map" pkg="tf" type="static_transform_publisher"
+        args="0 0 0 1.5707963268 -1.5707963268 0 /camera_world /map 100" />
 
-    <node name="base_link_to_camera_base_link" pkg="tf" type="static_transform_publisher" args="0 0 0 0 0 0 /base_link /camera_base_link 100" />
+    <!--
+        /orb_slam2/frame is the estimated pose by ORB SLAM on /camera_world.
+        /orb_slam2/map_frame is the estimated pose by ORB SLAM on /map.
+     -->
+    <node name="orb_frame_to_orb_map_frame" pkg="tf" type="static_transform_publisher"
+        args="0 0 0 1.5707963268 -1.5707963268 0 /orb_slam2/frame /orb_slam2/map_frame 100" />
+
+    <!--
+        If the pose fuser is used, the estimated pose by the pose fuser, i.e., /fused_frame, will be used as /base_link2.
+        If not, the estimated pose by ORB SLAM, i.e., /orb_slam2/map_frame, will be used.
+     -->
+    <node name="fused_frame_to_base_link2" pkg="tf" type="static_transform_publisher"
+        args="0 0 0 0 0 0 /fused_frame /base_link2 100"  if="$(arg use_pose_fuser)"/>
+    <node name="orb_map_frame_to_base_link2" pkg="tf" type="static_transform_publisher"
+        args="0 0 0 0 0 0 /orb_slam2/map_frame /base_link2 100" unless="$(arg use_pose_fuser)"/>
 </launch >
