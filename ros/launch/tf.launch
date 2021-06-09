@@ -1,0 +1,9 @@
+<!-- tf -->
+<launch >
+    <node name="odom2_to_camera_world" pkg="tf" type="static_transform_publisher" args="0 0 0 0 0 0 /odom2 /camera_world 100" />
+    <node name="camera_world_to_map" pkg="tf" type="static_transform_publisher" args="0 0 0 1.5707963268 -1.5707963268 0 /camera_world /map 100" />
+
+    <node name="orb_frame_to_base_link" pkg="tf" type="static_transform_publisher" args="0 0 0 0 0 0 /orb_slam2/camera /base_link 100" />
+
+    <node name="base_link_to_camera_base_link" pkg="tf" type="static_transform_publisher" args="0 0 0 0 0 0 /base_link /camera_base_link 100" />
+</launch >

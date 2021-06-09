@@ -20,6 +20,7 @@ private:
     std::string pubCmdName_;
     bool useORBSLAMTrackingFlag_;
     double cmdPublishHz_, watchDogTime_;
+    double maxLinearVelocity_, maxAngularVelocity_;
 
     geometry_msgs::TransformStamped joyCmd_, pathFollowCmd_;
     std_msgs::Char orbSLAMTrackingFlag_;
@@ -34,15 +35,19 @@ public:
         pubCmdName_("/cmd_vel"),
         useORBSLAMTrackingFlag_(false),
         cmdPublishHz_(20.0),
-        watchDogTime_(3.0)
+        watchDogTime_(3.0),
+        maxLinearVelocity_(0.2),
+        maxAngularVelocity_(0.2)
     {
         nh_.param("joy_cmd_name", joyCmdName_, joyCmdName_);
         nh_.param("path_follow_cmd_name", pathFollowCmdName_, pathFollowCmdName_);
         nh_.param("orb_slam_tracking_flag", orbSLAMTrackingFlagName_, orbSLAMTrackingFlagName_);
         nh_.param("use_orb_slam_tracking_flag", useORBSLAMTrackingFlag_, useORBSLAMTrackingFlag_);
-        nh_.param("cmd_name", pubCmdName_, pubCmdName_);
-        nh_.param("cmd_publish_hz", cmdPublishHz_, cmdPublishHz_);
-        nh_.param("watch_dog_time", watchDogTime_, watchDogTime_);
+        nh_.param("cmd_name_vs", pubCmdName_, pubCmdName_);
+        nh_.param("cmd_publish_hz_vs", cmdPublishHz_, cmdPublishHz_);
+        nh_.param("watch_dog_time_vs", watchDogTime_, watchDogTime_);
+        nh_.param("max_linear_velocity_vs", maxLinearVelocity_, maxLinearVelocity_);
+        nh_.param("max_angular_velocity_vs", maxAngularVelocity_, maxAngularVelocity_);
 
         joyCmdSub_ = nh_.subscribe(joyCmdName_, 1, &VelocitySelector::joyCmdCB, this);
         pathFollowCmdSub_ = nh_.subscribe(pathFollowCmdName_, 1, &VelocitySelector::pathFollowCmdCB, this);
@@ -54,6 +59,7 @@ public:
         while (ros::ok()) {
             ros::spinOnce();
             geometry_msgs::Twist cmd = getCmd();
+            cmd = checkCmd(cmd);
             cmdPub_.publish(cmd);
             loopRate.sleep();
         }
@@ -138,6 +144,27 @@ public:
         }
     }
 
+    inline double checkVelocity(double v, double maxv) {
+        if (std::isnan(maxv)) {
+            ROS_WARN("NAN value is selected by the velocity selector.");
+            return 0.0;
+        }
+        if (v > maxv)
+            v = maxv;
+        if (v < -maxv)
+            v = -maxv;
+        return v;
+    }
+
+    geometry_msgs::Twist checkCmd(geometry_msgs::Twist cmd) {
+        cmd.linear.x = checkVelocity(cmd.linear.x, maxLinearVelocity_);
+        cmd.linear.y = checkVelocity(cmd.linear.y, maxLinearVelocity_);
+        cmd.linear.z = checkVelocity(cmd.linear.z, maxLinearVelocity_);
+        cmd.angular.x = checkVelocity(cmd.angular.x, maxAngularVelocity_);
+        cmd.angular.y = checkVelocity(cmd.angular.y, maxAngularVelocity_);
+        cmd.angular.z = checkVelocity(cmd.angular.z, maxAngularVelocity_);
+        return cmd;
+    }
 }; // class VelocitySelector
 
 int main(int argc, char **argv) {
