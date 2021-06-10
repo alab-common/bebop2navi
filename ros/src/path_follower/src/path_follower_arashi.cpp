@@ -1,8 +1,9 @@
 /****************************************************************************
- * 経路追従
- * 速度をPID制御でコントロール
- →目標値と現在位置をsubscribe
- →速度をpublish
+ * Copyright (C) 2021 Naoki Akai.
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at https://mozilla.org/MPL/2.0/.
  ****************************************************************************/
 
 #include <ros/ros.h>
@@ -12,19 +13,6 @@
 #include <nav_msgs/Path.h>
 #include <tf/transform_broadcaster.h>
 #include <tf/transform_listener.h>
-
-#define kp 3
-#define kp_yaw 1
-#define ki 0
-#define ki_yaw 0
-#define kd 5
-#define kd_yaw 2
-#define hz 10
-#define time 1/hz
-#define vx_const 1
-#define vy_const 1
-#define vz_const 1
-#define vyaw_const 1
 
 class path_follower
 {
@@ -38,6 +26,7 @@ private:
     int path_len;
     double path_data[100][7];
     double current_position[7];
+    double kp, kp_yaw, ki, ki_yaw, kd, kd_yaw, hz, time, vx_const, vy_const, vz_const, vyaw_const;
 
 public:
     path_follower(void);
@@ -51,20 +40,45 @@ public:
 
 path_follower::path_follower():
     nh("~"),
-    tf_listener()
+    tf_listener(),
+    kp(1.0),
+    kp_yaw(1.0),
+    ki(1.0),
+    ki_yaw(1.0),
+    kd(1.0),
+    kd_yaw(1.0),
+    hz(1.0),
+    time(1/hz),
+    vx_const(1.0),
+    vy_const(1.0),
+    vz_const(1.0),
+    vyaw_const(1.0)
 {
     // subscriber
-    path_sub = nh.subscribe("/target_path", 1, &path_follower::get_path_CB, this); // 経路データを受け取る
+    path_sub = nh.subscribe("/target_path", 1, &path_follower::get_path_CB, this); // Receiving path
     // publisher
     piloting_pub = nh.advertise<geometry_msgs::Twist>("/bebop/cmd_vel", 1);
+    // read parameter
+    nh.param("kp", kp, kp);
+    nh.param("kp_yaw", kp_yaw, kp_yaw);
+    nh.param("ki", ki, ki);
+    nh.param("ki_yaw", ki_yaw, ki_yaw);
+    nh.param("kd", kd, kd);
+    nh.param("kd_yaw", kd_yaw, kd_yaw);
+    nh.param("hz", hz, hz);
+    nh.param("vx_const", vx_const, vx_const);
+    nh.param("vy_const", vy_const, vy_const);
+    nh.param("vz_const", vz_const, vz_const);
+    nh.param("vyaw_const", vyaw_const, vyaw_const);
 }
 
-void path_follower::reset(void) //変数の初期化
+void path_follower::reset(void) // Variable initialization
 {   
     current_position[0] = current_position[1] = current_position[2] = current_position[3] = current_position[4] = current_position[5] = current_position[6] = 0;
+    time = 1/hz;
 }
 
-void path_follower::get_path_CB(const nav_msgs::Path::ConstPtr &msg)   //path_serverから経路データの受け取り
+void path_follower::get_path_CB(const nav_msgs::Path::ConstPtr &msg)   // Receiving path
 {
     std::cout << "---Path---\n";
     nav_msgs::Path path;
@@ -81,7 +95,7 @@ void path_follower::get_path_CB(const nav_msgs::Path::ConstPtr &msg)   //path_se
     }
 }
 
-void path_follower::check_path(void)
+void path_follower::check_path(void) 
 {
 	ros::Rate loop_rate(10);
 	while(ros::ok())
@@ -94,14 +108,14 @@ void path_follower::check_path(void)
 			break;
 		}
         else
-        {
-            ROS_ERROR("Failure to get path");
+        { 
+            ROS_WARN("Failure to get path");
         }
 		loop_rate.sleep();
 	}
 }
 
-int calculate_dis(double current_position[6], double path_data[][7], int path_len)  //一番近い経路上の点を見つける
+int calculate_dis(double current_position[6], double path_data[][7], int path_len)  // Find the point on the closest path
 {
     int minimum_num = 0;
     float minimum_dis = 100000;
@@ -121,7 +135,7 @@ int calculate_dis(double current_position[6], double path_data[][7], int path_le
     return minimum_num;
 }
 
-int get_candidate(double path_data[][7], int minimum_num, int path_len)    //0.1m先の点をgoalに設定
+int get_candidate(double path_data[][7], int minimum_num, int path_len)    // Setting a target point
 {
     float dis_goal_max = 0;
     int goal_num = minimum_num;
@@ -143,7 +157,7 @@ int get_candidate(double path_data[][7], int minimum_num, int path_len)    //0.1
     return goal_num;
 }
 
-float check_angular(double current_position[7], double path_data[][7], int goal_num)    //yaw方向の差分計算
+float check_angular(double current_position[7], double path_data[][7], int goal_num)    // Difference calculation in yaw direction
 {   
     float yaw_goal, yaw_now;
 
@@ -189,7 +203,7 @@ void path_follower::controller(void)
 
         tf::StampedTransform map2base_link;
         ros::Time now = ros::Time::now();
-        try     //tfの/base_link2を読む
+        try     // Get current position
         {
             tf_listener.waitForTransform("/map", "/base_link2", now, ros::Duration(1.0));
             tf_listener.lookupTransform("/map", "/base_link2", now, map2base_link);
@@ -213,9 +227,9 @@ void path_follower::controller(void)
         current_position[5] = map2base_link.getRotation().z();
         current_position[6] = map2base_link.getRotation().w();
 
-        minimum_num = calculate_dis(current_position, path_data, path_len);     //一番近い経路上の点を見つける
-        goal_num = get_candidate(path_data, minimum_num, path_len);             //目標の設定
-        diff_yaw = check_angular(current_position, path_data, goal_num);        //yaw方向の差分計算
+        minimum_num = calculate_dis(current_position, path_data, path_len);     // Find the point on the closest path
+        goal_num = get_candidate(path_data, minimum_num, path_len);             // Setting a target point
+        diff_yaw = check_angular(current_position, path_data, goal_num);        // Difference calculation in yaw direction
 
         float diff_x = path_data[goal_num][0] - current_position[0];
         float diff_y = path_data[goal_num][1] - current_position[1];
@@ -286,22 +300,22 @@ void path_follower::controller(void)
             vyaw = -0.15;
         }
 
-        //現在の値を過去の値として保存
+        // Saving difference
         prev_diff_x = diff_x;
         prev_diff_y = diff_y;
         prev_diff_z = diff_z;
         prev_diff_yaw = diff_yaw;
 
-        //cmd_xxx
+        // cmd_xxx
         cmd_twist.linear.x = vx;
         cmd_twist.linear.y = vy;
         cmd_twist.linear.z = vz;
         cmd_twist.angular.z = vyaw;
 
-        //publish
+        // publish
         piloting_pub.publish(cmd_twist);
 
-        //sleep
+        // sleep
         loop_rate.sleep();
     }
 }
@@ -311,7 +325,7 @@ int main(int argc, char **argv)
 {
     ros::init(argc, argv, "path_follower");
 
-    printf("Start Bebop-Drone2 Controller\n");
+    std::cout << "Start Bebop-Drone2 Controller\n";
 
     path_follower node;
     node.reset();
