@@ -11,9 +11,7 @@
         <arg name="use_pose_fuser" value="false" />
     </include >
 
-<!--
     <include file="$(find orb_slam2_ros)/launch/bebop_slam.launch" />
- -->
 
     <include file="path_recording.launch" if="$(arg record_path)" >
         <arg name="mapping_mode" value="true" />
