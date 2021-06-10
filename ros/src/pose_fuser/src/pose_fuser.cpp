@@ -33,10 +33,9 @@ public:
     Eigen::MatrixXd covMat_;
     Eigen::MatrixXd noiseParam_;
     bool isNotSlamMsg_;
+    double fusedPoseHz_;
     double slamLostTime_;
     double scaleFactor_;
-    double initialX_, initialY_, initialZ_;
-    double initailRoll_, initialPitch_, initialYaw_;
     double initialCovXX_, initialCovYY_, initialCovZZ_;
     double initialCovRollRoll_, initialCovPitchPitch_, initialCovYawYaw_;
     double initialCov_, omegaYaw_;
@@ -62,7 +61,8 @@ PoseFuser::PoseFuser():
     fusedFrame_("/fused_frame"),
     mapFrame_("/map"),
     isNotSlamMsg_(true),
-    slamLostTime_(0.2),
+    fusedPoseHz_(20.0f),
+    slamLostTime_(0.2f),
     noiseParam_(36,1),
     scaleFactor_(0.11f),
     initialCovXX_(2.0f),
@@ -73,6 +73,25 @@ PoseFuser::PoseFuser():
     initialCovYawYaw_(2.0f),
     initialCov_(std::pow(10.0f, -6))
 {   
+    // set parameter
+    nh_.param("odom_topic_name", odomTopic_, odomTopic_);
+    nh_.param("slam_topic_name", slamTopic_, slamTopic_);
+    nh_.param("cmd_vel_topic_name", cmdVelTopic_, cmdVelTopic_);
+    nh_.param("fused_pose_topic_name", fusedTopic_, fusedTopic_);
+    nh_.param("map_frame", mapFrame_, mapFrame_);
+    nh_.param("camera_frame", cameraFrame_, cameraFrame_);
+    nh_.param("fused_frame", fusedFrame_, fusedFrame_);
+    nh_.param("fused_pose_hz", fusedPoseHz_, fusedPoseHz_);
+    nh_.param("slam_lost_time", slamLostTime_, slamLostTime_);
+    nh_.param("scale_factor", scaleFactor_, scaleFactor_);
+    nh_.param("initial_cov_xx", initialCovXX_, initialCovXX_);
+    nh_.param("initial_cov_yy", initialCovYY_, initialCovYY_);
+    nh_.param("initial_cov_zz", initialCovZZ_, initialCovZZ_);
+    nh_.param("initial_cov_rollroll", initialCovRollRoll_, initialCovPitchPitch_);
+    nh_.param("initial_cov_yawyaw", initialCovYawYaw_, initialCovYawYaw_);
+    nh_.param("initial_cov_pitchpitch", initialCovPitchPitch_, initialCovPitchPitch_);
+    nh_.param("initial_cov", initialCov_, initialCov_);
+
     // set initial pose
     pose_ = Eigen::VectorXd::Zero(6);
     // set initial covariance matrix
@@ -93,15 +112,6 @@ PoseFuser::PoseFuser():
         0.3, 0.3, 0.3, 0.4, 0.4, 0.4;
     noiseParam_ *= 2;
     
-    // set parameter
-    nh_.param("odom_topic_name", odomTopic_, odomTopic_);
-    nh_.param("slam_topic_name", slamTopic_, slamTopic_);
-    nh_.param("cmd_vel_topic_name", cmdVelTopic_, cmdVelTopic_);
-    nh_.param("fused_pose_topic_name", fusedTopic_, fusedTopic_);
-    nh_.param("map_frame", mapFrame_, mapFrame_);
-    nh_.param("camera_frame", cameraFrame_, cameraFrame_);
-    nh_.param("fused_frame", fusedFrame_, fusedFrame_);
-
     // subscriber
     odomSub_ = nh_.subscribe(odomTopic_, 1, &PoseFuser::odomCB, this);
     slamSub_ = nh_.subscribe(slamTopic_, 1, &PoseFuser::slamCB, this);
@@ -261,7 +271,7 @@ void PoseFuser::KalmanFilter(Eigen::VectorXd currPose, Eigen::Matrix<double, 6, 
         slamMsg.pose.pose.orientation.w);
     tf::Matrix3x3 m(q_camera2Map.inverse() * q * q_camera2Map);
     m.getRPY(slamPose(3), slamPose(4), slamPose(5));
-    
+
     // get Kalman Gain
     KalmanGain = currCovMat * outputMat.transpose() 
                 * (outputMat * currCovMat * outputMat.transpose() + slamCovMat).inverse();
@@ -321,7 +331,7 @@ int PoseFuser::get_slam_vectors_index(double currTime) {
 }
 
 void PoseFuser::spin(void){
-    ros::Rate rate(30);
+    ros::Rate rate(fusedPoseHz_);
     geometry_msgs::PoseWithCovarianceStamped currSlamMsg;
     Eigen::MatrixXd currCovMat(6,6);
     Eigen::VectorXd currPose(6);
