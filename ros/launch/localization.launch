@@ -1,0 +1,5 @@
+<!-- localization launch using ORB SLAM2 or pose fuser -->
+<launch >
+    <include file="tf.launch" />
+    <include file="$(find orb_slam2_ros)/launch/bebop_localization.launch" />
+</launch >

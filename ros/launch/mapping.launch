@@ -1,0 +1,5 @@
+<!-- mapping launch using ORB SLAM2 -->
+<launch >
+    <include file="tf.launch" />
+    <include file="$(find orb_slam2_ros)/launch/bebop_slam.launch" />
+</launch >
