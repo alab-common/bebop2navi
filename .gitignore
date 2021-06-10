@@ -33,3 +33,6 @@
 # ros build and devel
 ros/build/*
 ros/devel/*
+
+# ORB bin_vocabulary
+ros/src/orbslam-map-saving-extension/orb_slam2_lib/Vocabulary/bin_vocabulary
