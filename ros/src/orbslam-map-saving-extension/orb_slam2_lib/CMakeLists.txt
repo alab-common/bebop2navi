@@ -37,10 +37,6 @@ find_package(OpenCV 3.1.0 REQUIRED)
 find_package(Eigen3 REQUIRED)
 #find_package(Pangolin REQUIRED)
 
-find_package(catkin REQUIRED COMPONENTS
-  roscpp
-  )
-
 find_package(catkin REQUIRED)
 catkin_package(
   LIBRARIES orb_slam2_lib

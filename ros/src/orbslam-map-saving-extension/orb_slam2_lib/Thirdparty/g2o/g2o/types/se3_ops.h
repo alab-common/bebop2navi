@@ -27,8 +27,8 @@
 #ifndef G2O_MATH_STUFF
 #define G2O_MATH_STUFF
 
-#include <eigen3/Eigen/Core>
-#include <eigen3/Eigen/Geometry>
+#include <Eigen/Core>
+#include <Eigen/Geometry>
 
 namespace g2o {
   using namespace Eigen;

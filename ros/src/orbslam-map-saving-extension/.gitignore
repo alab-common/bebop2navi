@@ -37,8 +37,9 @@ sccprj/
 *cmake-build-debug
 *.idea
 # ROS stuff
-orbslam-map-saving-extension/orb_slam2_lib/Vocabulary/*
 *.bag
 #Saved maps or Binary vocabulary
 .bin
+
+orbslam-map-saving-extension/orb_slam2_lib/Vocabulary/*
 

@@ -5,24 +5,24 @@
 #--------------------------------------------------------------------------------------------
 
 # Camera calibration and distortion parameters (OpenCV)
-Camera.fx: 718.856
-Camera.fy: 718.856
-Camera.cx: 607.1928
-Camera.cy: 185.2157
+Camera.fx: 309.645945
+Camera.fy: 455.903821
+Camera.cx: 252.534716
+Camera.cy: 215.132479
 
-Camera.k1: 0.0
-Camera.k2: 0.0
-Camera.p1: 0.0
-Camera.p2: 0.0
+Camera.k1: 0.084528
+Camera.k2: -0.112198
+Camera.p1: 0.003163
+Camera.p2: 0.002268
 
-Camera.width: 1241
-Camera.height: 376
+Camera.width: 512
+Camera.height: 424
 
 # Camera frames per second
-Camera.fps: 10.0
+Camera.fps: 20.0
 
 # stereo baseline times fx
-Camera.bf: 386.1448
+Camera.bf: 0
 
 # Color order of the images (0: BGR, 1: RGB. It is ignored if images are grayscale)
 Camera.RGB: 1
@@ -70,6 +70,6 @@ Viewer.ViewpointF: 2000
 #Name of mapfile to be saved
 Map.mapfile: map.bin
 #Set to 1 if you want to save a map, 0 if not
-Map.save_map: 0
+Map.save_map: 1
 #Set to 1 if you want to load a saved map, 0 if not
 Map.load_map: 0

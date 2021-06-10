@@ -31,7 +31,7 @@
 #include <iomanip>
 #include <limits>
 
-#include <eigen3/Eigen/StdVector>
+#include <Eigen/StdVector>
 
 #include "base_edge.h"
 #include "robust_kernel.h"

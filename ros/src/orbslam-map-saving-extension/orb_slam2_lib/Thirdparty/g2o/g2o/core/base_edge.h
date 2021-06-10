@@ -30,7 +30,7 @@
 #include <iostream>
 #include <limits>
 
-#include <eigen3/Eigen/Core>
+#include <Eigen/Core>
 
 #include "optimizable_graph.h"
 

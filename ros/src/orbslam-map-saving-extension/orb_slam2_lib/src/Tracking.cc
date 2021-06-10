@@ -446,8 +446,7 @@ void Tracking::Track()
 
 	          if (mpMapPublisher)
 		            //mpMapPublisher->SetCurrentCameraPose(mCurrentFrame.mTcw);
-					mpMapPublisher->SetCurrentCameraPose(mCurrentFrame.mTcw, mCurrentFrame.mTimeStamp);
-
+		             mpMapPublisher->SetCurrentCameraPose(mCurrentFrame.mTcw, mCurrentFrame.mTimeStamp);
 
 
             // Clean VO matches
@@ -574,7 +573,8 @@ void Tracking::StereoInitialization()
 
         if (mpMapPublisher)
 	    //mpMapPublisher->SetCurrentCameraPose(mCurrentFrame.mTcw);
-		mpMapPublisher->SetCurrentCameraPose(mCurrentFrame.mTcw, mCurrentFrame.mTimeStamp);
+	     mpMapPublisher->SetCurrentCameraPose(mCurrentFrame.mTcw, mCurrentFrame.mTimeStamp);
+
 
         mState=OK;
     }
@@ -753,7 +753,7 @@ void Tracking::CreateInitialMapMonocular()
 
     if (mpMapPublisher)
 	//mpMapPublisher->SetCurrentCameraPose(pKFcur->GetPose());
-	mpMapPublisher->SetCurrentCameraPose(mCurrentFrame.mTcw, mCurrentFrame.mTimeStamp);
+	 mpMapPublisher->SetCurrentCameraPose(mCurrentFrame.mTcw, mCurrentFrame.mTimeStamp);
 
 
     mpMap->mvpKeyFrameOrigins.push_back(pKFini);

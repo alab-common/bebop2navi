@@ -20,8 +20,6 @@
 
 #include "Optimizer.h"
 
-//#include<ros/ros.h>
-
 #include "Thirdparty/g2o/g2o/core/block_solver.h"
 #include "Thirdparty/g2o/g2o/core/optimization_algorithm_levenberg.h"
 #include "Thirdparty/g2o/g2o/solvers/linear_solver_eigen.h"
@@ -448,13 +446,6 @@ int Optimizer::PoseOptimization(Frame *pFrame)
     g2o::SE3Quat SE3quat_recov = vSE3_recov->estimate();
     cv::Mat pose = Converter::toCvMat(SE3quat_recov);
     pFrame->SetPose(pose);
-
-	g2o::SparseBlockMatrixXd spinv; 
-	optimizer.computeMarginals(spinv, optimizer.vertex(0)); 
-	Eigen::Matrix<double, 6, 6> margCovInv = Eigen::Matrix<double, 6, 6>::Zero(); 
-	margCovInv.topLeftCorner(6,6) = spinv.block(0, 0)->inverse(); 
-	cout<<"Matrix covariance:\n"<<margCovInv<<endl;
-	//ROS_INFO(margCovInv);
 
     return nInitialCorrespondences-nBad;
 }
