@@ -1,0 +1,8 @@
+<!-- -->
+<launch >
+    <arg name="square_nums" default="10x7" />
+    <arg name="square_size" default="0.022" /> <!-- in meter -->
+    <arg name="image_topic_name" default="/bebop/image_raw" />
+
+    <node name="camera_calibration" pkg="camera_calibration" type="cameracalibrator.py" args="--size $(arg square_nums) --square $(arg square_size) image:=$(arg image_topic_name)" />
+</launch >
