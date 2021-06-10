@@ -53,3 +53,5 @@ target_link_libraries(path_saver ${catkin_LIBRARIES})
 add_executable(path_follower src/path_follower.cpp)
 target_link_libraries(path_follower ${catkin_LIBRARIES})
 
+add_executable(path_follower_arashi src/path_follower_arashi.cpp)
+target_link_libraries(path_follower_arashi ${catkin_LIBRARIES})
