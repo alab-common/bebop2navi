@@ -29,3 +29,7 @@
 
 # Temporary files
 *~
+
+# ros build and devel
+ros/build/*
+ros/devel/*
