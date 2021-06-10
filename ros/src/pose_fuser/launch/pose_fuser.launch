@@ -1,0 +1,22 @@
+<!-- pose fuser -->
+<launch >
+    <!-- argments -->
+    <arg name="odom_topic_name" default="/bebop/odom" />
+    <arg name="slam_topic_name" default="/orb_slam2/pose" />
+    <arg name="cmd_vel_topic_name" default="/bebop/cmd_vel" />
+    <arg name="fused_pose_topic_name" default="/fused_pose" />
+    <arg name="map_frame" default="/map" />
+    <arg name="camera_frame" default="/camera_world" />
+    <arg name="fused_frame" default="/fused_frame" />
+
+    <!-- pose fuser -->
+    <node name="pose_fuser" pkg="pose_fuser" type="pose_fuser" output="screen">
+        <param name="/odom_topic_name" value="$(arg odom_topic_name)" type="string" />
+        <param name="/slam_topic_name" value="$(arg slam_topic_name)" type="string" />
+        <param name="/cmd_vel_topic_name" value="$(arg cmd_vel_topic_name)" type="string" />
+        <param name="/fused_pose_topic_name" value="$(arg fused_pose_topic_name)" type="string" /> 
+        <param name="/map_frame" value="$(arg map_frame)" type="string" />
+        <param name="/camera_frame" value="$(arg camera_frame)" type="string" />
+        <param name="/fused_frame" value="$(arg fused_frame)" type="string" />
+    </node >
+</launch >

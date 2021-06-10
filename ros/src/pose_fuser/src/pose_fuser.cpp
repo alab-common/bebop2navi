@@ -1,3 +1,11 @@
+/****************************************************************************
+ * Copyright (C) 2021 Koki Yasui.
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at https://mozilla.org/MPL/2.0/.
+ ****************************************************************************/
+
 #include <ros/ros.h>
 #include <eigen3/Eigen/Core>
 #include <eigen3/Eigen/LU>
@@ -18,13 +26,14 @@ public:
     ros::NodeHandle nh_;
     ros::Subscriber odomSub_, slamSub_, cmdVelSub_;
     ros::Publisher fusedPosePub_;
-    std::string odomTopic_, slamTopic_, fusedTopic_, cameraFrame_, fusedFrame_, mapFrame_, cmdVelTopic_, slamFrame_;
+    std::string odomTopic_, cmdVelTopic_, slamTopic_, fusedTopic_;
+    std::string cameraFrame_, fusedFrame_, mapFrame_, slamFrame_;
     std::vector<geometry_msgs::PoseWithCovarianceStamped> slamMsgs_;
     Eigen::VectorXd pose_;
     Eigen::MatrixXd covMat_;
-    Eigen::Matrix<double, 36, 1> errorParam_;
-    bool isNotSlamMsg_ = true;
-    double slamLostTime_ = 0.1f;
+    Eigen::MatrixXd noiseParam_;
+    bool isNotSlamMsg_;
+    double slamLostTime_;
     double scaleFactor_;
     double initialX_, initialY_, initialZ_;
     double initailRoll_, initialPitch_, initialYaw_;
@@ -32,63 +41,74 @@ public:
     double initialCovRollRoll_, initialCovPitchPitch_, initialCovYawYaw_;
     double initialCov_, omegaYaw_;
 
-    PoseFuser(void):
-        nh_("~"),
-        odomTopic_("/bebop/odom"),
-        slamTopic_("/orb_slam2/pose"),
-        cmdVelTopic_("/bebop/cmd_vel"),
-        fusedTopic_("/pose_fuser"),
-        cameraFrame_("/camera_world"),
-        fusedFrame_("/fused_frame"),
-        mapFrame_("/map"),
-        scaleFactor_(0.11f),
-        initialCovXX_(2.0f),
-        initialCovYY_(2.0f),
-        initialCovZZ_(1.0f),
-        initialCovRollRoll_(2.0f),
-        initialCovPitchPitch_(2.0f),
-        initialCovYawYaw_(2.0f),
-        initialCov_(std::pow(10.0f, -6))
-    {   
-        // set initial pose
-        pose_ = Eigen::VectorXd::Zero(6);
-        
-        // set initial covariance matrix
-        covMat_ = initialCov_ * Eigen::MatrixXd::Ones(6,6);
-        covMat_(0,0) = initialCovXX_;
-        covMat_(1,1) = initialCovYY_;
-        covMat_(2,2) = initialCovZZ_;
-        covMat_(3,3) = initialCovRollRoll_;
-        covMat_(4,4) = initialCovPitchPitch_;
-        covMat_(5,5) = initialCovYawYaw_;
-
-        // set error parameter
-        errorParam_ <<
-            0.3, 0.3, 0.3, 0.4, 0.4, 0.4, 
-            0.3, 0.3, 0.3, 0.4, 0.4, 0.4,
-            0.3, 0.3, 0.3, 0.4, 0.4, 0.4,
-            0.3, 0.3, 0.3, 0.4, 0.4, 0.4,
-            0.3, 0.3, 0.3, 0.4, 0.4, 0.4,
-            0.3, 0.3, 0.3, 0.4, 0.4, 0.4;
-        
-        errorParam_ *= 2;
-        
-        odomSub_ = nh_.subscribe(odomTopic_, 1, &PoseFuser::odomCB, this);
-        slamSub_ = nh_.subscribe(slamTopic_, 1, &PoseFuser::slamCB, this);
-        cmdVelSub_ = nh_.subscribe(cmdVelTopic_, 1, &PoseFuser::cmdVelCB, this);
-
-        fusedPosePub_ = nh_.advertise<geometry_msgs::PoseWithCovarianceStamped>(fusedTopic_, 1);
-    }
-
+    PoseFuser();
     void odomCB(const nav_msgs::Odometry::ConstPtr &msg);
     void slamCB(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr &msg);
     void cmdVelCB(const geometry_msgs::Twist::ConstPtr &msg);
     void spin(void);
     void publishMassages(void);
     void KalmanFilter(Eigen::VectorXd currPose, Eigen::Matrix<double, 6, 6> currCovMat, geometry_msgs::PoseWithCovarianceStamped slamMsg);
-    int get_slam_vectors_index(double currTime);
     void modifyAngle(double *angle);
+    int get_slam_vectors_index(double currTime);
 };
+
+PoseFuser::PoseFuser():
+    nh_("~"),
+    odomTopic_("/bebop/odom"),
+    slamTopic_("/orb_slam2/pose"),
+    cmdVelTopic_("/bebop/cmd_vel"),
+    fusedTopic_("/fused_pose"),
+    cameraFrame_("/camera_world"),
+    fusedFrame_("/fused_frame"),
+    mapFrame_("/map"),
+    isNotSlamMsg_(true),
+    slamLostTime_(0.2),
+    noiseParam_(36,1),
+    scaleFactor_(0.11f),
+    initialCovXX_(2.0f),
+    initialCovYY_(2.0f),
+    initialCovZZ_(1.0f),
+    initialCovRollRoll_(2.0f),
+    initialCovPitchPitch_(2.0f),
+    initialCovYawYaw_(2.0f),
+    initialCov_(std::pow(10.0f, -6))
+{   
+    // set initial pose
+    pose_ = Eigen::VectorXd::Zero(6);
+    // set initial covariance matrix
+    covMat_ = initialCov_ * Eigen::MatrixXd::Ones(6,6);
+    covMat_(0,0) = initialCovXX_;
+    covMat_(1,1) = initialCovYY_;
+    covMat_(2,2) = initialCovZZ_;
+    covMat_(3,3) = initialCovRollRoll_;
+    covMat_(4,4) = initialCovPitchPitch_;
+    covMat_(5,5) = initialCovYawYaw_;
+    // set noise parameter
+    noiseParam_ <<
+        0.3, 0.3, 0.3, 0.4, 0.4, 0.4, 
+        0.3, 0.3, 0.3, 0.4, 0.4, 0.4,
+        0.3, 0.3, 0.3, 0.4, 0.4, 0.4,
+        0.3, 0.3, 0.3, 0.4, 0.4, 0.4,
+        0.3, 0.3, 0.3, 0.4, 0.4, 0.4,
+        0.3, 0.3, 0.3, 0.4, 0.4, 0.4;
+    noiseParam_ *= 2;
+    
+    // set parameter
+    nh_.param("odom_topic_name", odomTopic_, odomTopic_);
+    nh_.param("slam_topic_name", slamTopic_, slamTopic_);
+    nh_.param("cmd_vel_topic_name", cmdVelTopic_, cmdVelTopic_);
+    nh_.param("fused_pose_topic_name", fusedTopic_, fusedTopic_);
+    nh_.param("map_frame", mapFrame_, mapFrame_);
+    nh_.param("camera_frame", cameraFrame_, cameraFrame_);
+    nh_.param("fused_frame", fusedFrame_, fusedFrame_);
+
+    // subscriber
+    odomSub_ = nh_.subscribe(odomTopic_, 1, &PoseFuser::odomCB, this);
+    slamSub_ = nh_.subscribe(slamTopic_, 1, &PoseFuser::slamCB, this);
+    cmdVelSub_ = nh_.subscribe(cmdVelTopic_, 1, &PoseFuser::cmdVelCB, this);
+    // publisher
+    fusedPosePub_ = nh_.advertise<geometry_msgs::PoseWithCovarianceStamped>(fusedTopic_, 1);
+}
 
 void PoseFuser::odomCB(const nav_msgs::Odometry::ConstPtr &msg){
     static bool isFirst = true;
@@ -144,7 +164,7 @@ void PoseFuser::odomCB(const nav_msgs::Odometry::ConstPtr &msg){
     R = mat_generator::get_transformation_matrix_map_to_world(currAttitude);
     G = mat_generator::get_Jacobian_matrix_state(deltaTime, currAttitude, u);
     V = mat_generator::get_Jacobian_matrix_input(deltaTime, currAttitude);
-    M = mat_generator::get_input_error_matrix(errorParam_, u);
+    M = mat_generator::get_input_error_matrix(noiseParam_, u);
        
     // update odometry & covariance matrix
     pose += scaleFactor_ * deltaTime * R * u;
@@ -173,12 +193,9 @@ void PoseFuser::cmdVelCB(const geometry_msgs::Twist::ConstPtr &msg){
 }
 
 void PoseFuser::KalmanFilter(Eigen::VectorXd currPose, Eigen::Matrix<double, 6, 6> currCovMat, geometry_msgs::PoseWithCovarianceStamped slamMsg){
-    Eigen::MatrixXd KalmanGain(6,6), outputMat(6,6), slamCovMat(6,6);
+    Eigen::MatrixXd KalmanGain(6,6), outputMat(6,6), slamCovMat(6,6), fusedCovMat(6,6);
     Eigen::MatrixXd I = Eigen::MatrixXd::Identity(6,6);
-    Eigen::VectorXd slamPose = Eigen::VectorXd::Zero(6);
-    Eigen::MatrixXd fusedCovMat(6,6);
-    Eigen::VectorXd fusedPose(6);
-    Eigen::VectorXd diffVector(6);
+    Eigen::VectorXd slamPose(6), fusedPose(6);
     
     static tf::Quaternion q_camera2Map;
     static Eigen::Matrix3d rotMat;
@@ -225,14 +242,13 @@ void PoseFuser::KalmanFilter(Eigen::VectorXd currPose, Eigen::Matrix<double, 6, 
         slamCovMat(i, j) = slamMsg.pose.covariance[i * 6 + j];
     }
     slamCovMat = 1.0 * I;
-    slamCovMat(2,2) = 1000;
 
-    // pose from slam
-    slamPose(0) = slamMsg.pose.pose.position.x;
-    slamPose(1) = slamMsg.pose.pose.position.y;
-    slamPose(2) = slamMsg.pose.pose.position.z;
-    // transform from camera world to map
-    Eigen::Vector3d position = slamPose.block(0,0,3,1);
+    // transform position & attitude from camera world to map
+    Eigen::Vector3d position;
+    position(0) = slamMsg.pose.pose.position.x;
+    position(1) = slamMsg.pose.pose.position.y;
+    position(2) = slamMsg.pose.pose.position.z;
+
     position = rotMat * position;
     slamPose(0) = position(0);
     slamPose(1) = position(1);
@@ -243,20 +259,14 @@ void PoseFuser::KalmanFilter(Eigen::VectorXd currPose, Eigen::Matrix<double, 6, 
         slamMsg.pose.pose.orientation.y, 
         slamMsg.pose.pose.orientation.z,
         slamMsg.pose.pose.orientation.w);
-    tf::Matrix3x3 m(q);
+    tf::Matrix3x3 m(q_camera2Map.inverse() * q * q_camera2Map);
     m.getRPY(slamPose(3), slamPose(4), slamPose(5));
     
-    static tf::TransformBroadcaster br;
-    tf::Transform transform;
-    transform.setOrigin(tf::Vector3(slamPose(0), slamPose(1), slamPose(2)));
-    transform.setRotation(q_camera2Map * q * q_camera2Map.inverse());
-    br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), mapFrame_, "/base_link3"));
-
     // get Kalman Gain
     KalmanGain = currCovMat * outputMat.transpose() 
                 * (outputMat * currCovMat * outputMat.transpose() + slamCovMat).inverse();
     
-    diffVector = slamPose - outputMat * currPose;
+    Eigen::VectorXd diffVector = slamPose - outputMat * currPose;
     modifyAngle(&diffVector(3));
     modifyAngle(&diffVector(4));
     modifyAngle(&diffVector(5));
@@ -304,7 +314,7 @@ int PoseFuser::get_slam_vectors_index(double currTime) {
     }
     for (int i = 0; i < (int)slamMsgs_.size(); i++) {
         double time = slamMsgs_[i].header.stamp.toSec();
-        if (time < currTime && fabs(currTime - time) < 0.2)
+        if (time < currTime && fabs(currTime - time) < slamLostTime_)
             return i;
     }
     return -1;
