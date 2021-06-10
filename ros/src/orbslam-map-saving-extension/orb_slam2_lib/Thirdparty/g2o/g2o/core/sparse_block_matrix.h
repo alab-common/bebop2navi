@@ -33,7 +33,7 @@
 #include <iostream>
 #include <iomanip>
 #include <cassert>
-#include <eigen3/Eigen/Core>
+#include <Eigen/Core>
 
 #include "sparse_block_matrix_ccs.h"
 #include "matrix_structure.h"

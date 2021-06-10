@@ -19,7 +19,7 @@ public:
 
     //void SetCurrentCameraPose(const cv::Mat &Tcw);
     //cv::Mat GetCameraPose();
-	virtual void SetCurrentCameraPose(const cv::Mat &Tcw, const double &timestamp);
+    virtual void SetCurrentCameraPose(const cv::Mat &Tcw, const double &timestamp);
     std::pair<cv::Mat, double> GetCameraPose();
 
     Map *GetMap() { return mpMap; }
@@ -28,7 +28,7 @@ public:
 
 private:
     cv::Mat mCameraPose;
-	double mCameraTimestamp;
+    double mCameraTimestamp;
 
     Map* mpMap;
     std::mutex mMutexCamera;

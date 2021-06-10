@@ -32,7 +32,7 @@
 #else
 #include <tr1/memory>
 #endif
-#include <eigen3/Eigen/Core>
+#include <Eigen/Core>
 
 
 namespace g2o {

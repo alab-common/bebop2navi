@@ -6,7 +6,7 @@
   <arg name="use_ORBSLAM_ros"		default="true"/>
   <arg name="octomap_enabled"		default="false"/>
    <!-- ORBSLAM2 with Ros -->
-<!-- remplacer stereo par RGBD et vice versa --> 
+
 <node pkg="orb_slam2_ros" type="Stereo" name="orb_slam2" args="$(find orb_slam2_lib)/Vocabulary/ORBvoc.bin $(find orb_slam2_ros)/settings/ZED18392_car2.yaml False" cwd="node" output="screen" if="$(arg use_ORBSLAM_ros)"> <!-- Provide the correct settings file for Camera, including parameters for ORB -->
    <param name="octomap_enabled" value="$(arg octomap_enabled)"/> <!-- needed for projected/gradient map-->
    <param name="octomap_resolution" value="0.02"/>

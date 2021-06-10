@@ -40,7 +40,7 @@
 #include "se3_ops.h"
 #include "se3quat.h"
 #include "types_sba.h"
-#include <eigen3/Eigen/Geometry>
+#include <Eigen/Geometry>
 
 namespace g2o {
 namespace types_six_dof_expmap {

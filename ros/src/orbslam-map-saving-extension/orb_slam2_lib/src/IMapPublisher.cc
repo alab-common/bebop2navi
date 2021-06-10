@@ -13,7 +13,7 @@ void IMapPublisher::SetCurrentCameraPose(const cv::Mat &Tcw, const double &times
 {
     unique_lock<mutex> lock(mMutexCamera);
     mCameraPose = Tcw.clone();
-	mCameraTimestamp = timestamp;
+    mCameraTimestamp = timestamp;
 
     mbCameraUpdated = true;
 }
@@ -24,7 +24,7 @@ std::pair<cv::Mat, double> IMapPublisher::GetCameraPose()
 {
     unique_lock<mutex> lock(mMutexCamera);
     //return mCameraPose;
-	return std::make_pair(mCameraPose, mCameraTimestamp);
+    return std::make_pair(mCameraPose, mCameraTimestamp);
 }
 
 bool IMapPublisher::isCamUpdated()

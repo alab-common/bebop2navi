@@ -104,7 +104,8 @@ int main(int argc, char **argv)
 
     ImageGrabber igb {&SLAM};
     ros::NodeHandle nodeHandler;
-    ros::Subscriber sub = nodeHandler.subscribe("/camera/image_raw", 1, &ImageGrabber::GrabImage, &igb);
+//    ros::Subscriber sub = nodeHandler.subscribe("/camera/image_raw", 1, &ImageGrabber::GrabImage, &igb);
+    ros::Subscriber sub = nodeHandler.subscribe("/bebop/image_raw", 1, &ImageGrabber::GrabImage, &igb);
 
     SLAM.Start();
     ros::spin();
