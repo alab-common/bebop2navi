@@ -1,0 +1,10 @@
+<!-- path saving launch -->
+<launch >
+    <arg name="path_file" default="$(find path_follower)/data/example.txt" />
+    <arg name="input_path_topic_name" default="/recorded_path" />
+
+    <include file="$(find path_follower)/launch/path_saver.launch" >
+        <arg name="path_file" default="$(arg path_file)" />
+        <arg name="input_path_topic_name" default="$(arg input_path_topic_name)" />
+    </include >
+</launch >

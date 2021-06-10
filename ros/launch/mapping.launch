@@ -1,5 +1,21 @@
 <!-- mapping launch using ORB SLAM2 -->
 <launch >
-    <include file="tf.launch" />
+    <!--
+        Path recording launch will be executed if record_path is true.
+        Note that the pose fuser cannot be simultaneously used with the SLAM (mapping) mode.
+        You should tune the parameters defined in path_recording.launch.
+     -->
+    <arg name="record_path" default="false" />
+
+    <include file="tf.launch" >
+        <arg name="use_pose_fuser" value="false" />
+    </include >
+
+<!--
     <include file="$(find orb_slam2_ros)/launch/bebop_slam.launch" />
+ -->
+
+    <include file="path_recording.launch" if="$(arg record_path)" >
+        <arg name="mapping_mode" value="true" />
+    </include >
 </launch >
