@@ -9,7 +9,7 @@
 #include <ros/ros.h>
 #include <sensor_msgs/Joy.h>
 #include <geometry_msgs/Twist.h>
-#include <geometry_msgs/Transform.h>
+#include <geometry_msgs/TransformStamped.h>
 
 class JoyController {
 public:
@@ -29,7 +29,7 @@ public:
         publishTwist_(false),
         publishHz_(10.0),
         velocitiesCoef_(0.1),
-        priority_(0.0)
+        priority_(1.0)
     {
         nh_.param("joy_topic_name", joyTopicName_, joyTopicName_);
         nh_.param("joy_controller_topic_name", cmdTopicName_, cmdTopicName_);
@@ -39,7 +39,7 @@ public:
 
         joySub_ = nh_.subscribe(joyTopicName_, 1, &JoyController::joyCB, this);
 
-        cmdPub_ = nh_.advertise<geometry_msgs::Transform>(cmdTopicName_, 10);
+        cmdPub_ = nh_.advertise<geometry_msgs::TransformStamped>(cmdTopicName_, 10);
         if (publishTwist_)
             twistPub_ = nh_.advertise<geometry_msgs::Twist>("/bebop/cmd_vel", 10);
     }
@@ -53,9 +53,9 @@ public:
             cmd_.linear.z = msg->axes[5] * velocitiesCoef_;
             cmd_.angular.z = msg->axes[2] * velocitiesCoef_;
 
-            if (msg->buttons[8] == 1)
+            if (msg->buttons[7] == 1)
                 priority_ += 1.0;
-            else if (msg->buttons[9] == 1)
+            else if (msg->buttons[6] == 1)
                 priority_ -= 1.0;
 
             if (msg->buttons[3] == 1) {
@@ -71,15 +71,16 @@ public:
         }
     }
 
-    geometry_msgs::Transform getJoyCmd(void) {
-        geometry_msgs::Transform cmd;
-        cmd.translation.x = cmd_.linear.x;
-        cmd.translation.y = cmd_.linear.y;
-        cmd.translation.z = cmd_.linear.z;
-        cmd.rotation.x = cmd_.angular.x;
-        cmd.rotation.y = cmd_.angular.y;
-        cmd.rotation.z = cmd_.angular.z;
-        cmd.rotation.w = priority_;
+    geometry_msgs::TransformStamped getJoyCmd(void) {
+        geometry_msgs::TransformStamped cmd;
+        cmd.header.stamp = ros::Time::now();
+        cmd.transform.translation.x = cmd_.linear.x;
+        cmd.transform.translation.y = cmd_.linear.y;
+        cmd.transform.translation.z = cmd_.linear.z;
+        cmd.transform.rotation.x = cmd_.angular.x;
+        cmd.transform.rotation.y = cmd_.angular.y;
+        cmd.transform.rotation.z = cmd_.angular.z;
+        cmd.transform.rotation.w = priority_;
         return cmd;
     }
 
@@ -87,7 +88,7 @@ public:
         ros::Rate loopRate(publishHz_);
         while (ros::ok()) {
             ros::spinOnce();
-            geometry_msgs::Transform cmd = getJoyCmd();
+            geometry_msgs::TransformStamped cmd = getJoyCmd();
             cmdPub_.publish(cmd);
             if (publishTwist_)
                 twistPub_.publish(cmd_);

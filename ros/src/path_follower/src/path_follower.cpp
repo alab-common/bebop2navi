@@ -7,9 +7,9 @@
  ****************************************************************************/
 
 #include <ros/ros.h>
-#include <std_msgs/Float32.h>
 #include <nav_msgs/Path.h>
-#include <geometry_msgs/TwistStamped.h>
+#include <geometry_msgs/Twist.h>
+#include <geometry_msgs/TransformStamped.h>
 #include <tf/transform_broadcaster.h>
 #include <tf/transform_listener.h>
 
@@ -17,24 +17,22 @@ class PathFollower
 {
 private:
     ros::NodeHandle nh;
-    ros::Subscriber path_sub, max_vel_sub;
+    ros::Subscriber path_sub;
     ros::Publisher cmd_pub, twist_pub;
     std::string map_frame, base_link_frame;
-    std::string input_path_topic_name, input_max_vel_topic_name, output_twist_topic_name;
+    std::string input_path_topic_name, output_cmd_topic_name;
     nav_msgs::Path path;
     tf::TransformListener tf_listener;
     double look_ahead_dist, max_vel, kv;
     double cmd_publish_hz;
-    bool iterate_following, use_nav_core_server;
+    bool iterate_following, publish_twist;
     int nearest_path_index, prev_nearest_path_index;
 
 public:
     PathFollower();
     ~PathFollower() {};
     void path_callback(const nav_msgs::Path::ConstPtr& msg);
-    void max_vel_callback(const std_msgs::Float32::ConstPtr& msg);
     void spin(void);
-    void wait_for_new_path(void);
 };
 
 PathFollower::PathFollower():
@@ -42,46 +40,39 @@ PathFollower::PathFollower():
     map_frame("/map"),
     base_link_frame("/base_link2"),
     input_path_topic_name("/target_path"),
-    input_max_vel_topic_name("/max_vel"),
-    output_twist_topic_name("/twist_cmd_path_follow"),
-    look_ahead_dist(1.0),
-    max_vel(1.0),
-    kv(0.6),
+    output_cmd_topic_name("/cmd_vel_path_follow"),
+    look_ahead_dist(0.2),
+    max_vel(0.1),
+    kv(0.06),
     cmd_publish_hz(20.0),
     prev_nearest_path_index(-1),
     iterate_following(false),
-    use_nav_core_server(false),
+    publish_twist(false),
     tf_listener()
 {
     // read parameters
     nh.param("map_frame", map_frame, map_frame);
     nh.param("base_link_frame", base_link_frame, base_link_frame);
     nh.param("input_path_topic_name", input_path_topic_name, input_path_topic_name);
-    nh.param("input_max_vel_topic_name", input_max_vel_topic_name, input_max_vel_topic_name);
-    nh.param("output_twist_topic_name", output_twist_topic_name, output_twist_topic_name);
+    nh.param("output_cmd_topic_name", output_cmd_topic_name, output_cmd_topic_name);
     nh.param("look_ahead_dist", look_ahead_dist, look_ahead_dist);
     nh.param("max_vel", max_vel, max_vel);
     nh.param("kv", kv, kv);
     nh.param("cmd_publish_hz", cmd_publish_hz, cmd_publish_hz);
     nh.param("iterate_following", iterate_following, iterate_following);
-    nh.param("use_nav_core_server", use_nav_core_server, use_nav_core_server);
+    nh.param("publish_twist", publish_twist, publish_twist);
     // subscriber
     path_sub = nh.subscribe(input_path_topic_name, 1, &PathFollower::path_callback, this);
-    max_vel_sub = nh.subscribe(input_max_vel_topic_name, 1, &PathFollower::max_vel_callback, this);
     // publisher
-    cmd_pub = nh.advertise<geometry_msgs::Twist>("/cmd_vel", 100);
-    twist_pub = nh.advertise<geometry_msgs::TwistStamped>(output_twist_topic_name, 100);
+    cmd_pub = nh.advertise<geometry_msgs::Twist>(output_cmd_topic_name, 10);
+    if (publish_twist)
+        twist_pub = nh.advertise<geometry_msgs::Twist>("/bebop/cmd_vel", 10);
 }
 
 void PathFollower::path_callback(const nav_msgs::Path::ConstPtr& msg)
 {
     path = *msg;
     prev_nearest_path_index = -1;
-}
-
-void PathFollower::max_vel_callback(const std_msgs::Float32::ConstPtr& msg)
-{
-    max_vel = msg->data;
 }
 
 void PathFollower::spin(void)
@@ -104,9 +95,10 @@ void PathFollower::spin(void)
             ROS_ERROR("%s", ex.what());
             continue;
         }
-        // x, y, and yaw mean 2d robot pose
+        // 3d robot pose
         double x = map2base_link.getOrigin().x();
         double y = map2base_link.getOrigin().y();
+        double z = map2base_link.getOrigin().z();
         tf::Quaternion q(map2base_link.getRotation().x(),
             map2base_link.getRotation().y(),
             map2base_link.getRotation().z(),
@@ -162,26 +154,29 @@ void PathFollower::spin(void)
             }
         }
         // determine twist command
-        geometry_msgs::Twist cmd_vel;
-        geometry_msgs::TwistStamped twist_cmd;
-        twist_cmd.header.stamp = ros::Time::now();
+        geometry_msgs::TransformStamped cmd_vel;
+        geometry_msgs::Twist twist_cmd;
         bool stop;
         nh.getParam("/path_follower/stop", stop);
         if (target_path_index < 0 || path.poses.size() == 0 || stop)
         {
             // reach at the goal point or no path data
-            cmd_vel.linear.x = twist_cmd.twist.linear.x = 0.0;
-            cmd_vel.angular.z = twist_cmd.twist.angular.z = 0.0;
-            twist_cmd.twist.linear.z = -1.0; // linear.z is used as priority
+            cmd_vel.header.stamp = ros::Time::now();
+            twist_cmd.linear.x = cmd_vel.transform.translation.x = 0.0;
+            twist_cmd.linear.y = cmd_vel.transform.translation.y = 0.0;
+            twist_cmd.linear.z = cmd_vel.transform.translation.z = 0.0;
+            twist_cmd.angular.x = cmd_vel.transform.rotation.x = 0.0;
+            twist_cmd.angular.y = cmd_vel.transform.rotation.y = 0.0;
+            twist_cmd.angular.z = cmd_vel.transform.rotation.z = 0.0;
+            cmd_vel.transform.rotation.w = 0.0; // this is used as priority
             eo = 0.0;
-            if (path.poses.size() != 0 && !stop && use_nav_core_server)
-                wait_for_new_path();
         }
         else
         {
             // compute deviation from the path and determine twist_cmd based on PD control
             double dx = path.poses[target_path_index].pose.position.x - path.poses[target_path_index - 1].pose.position.x;
             double dy = path.poses[target_path_index].pose.position.y - path.poses[target_path_index - 1].pose.position.y;
+            double dz = path.poses[target_path_index].pose.position.z - path.poses[target_path_index - 1].pose.position.z;
             double th = atan2(dy, dx);
             double x2p = dx * cos(th) + dy * sin(th);
             dx = path.poses[target_path_index].pose.position.x - x;
@@ -190,68 +185,48 @@ void PathFollower::spin(void)
             double yrp = -dx * sin(th) + dy * cos(th);
             double t = atan2(dy, dx);
             double e = t - yaw;
-            if (e < -M_PI)    e += 2.0 * M_PI;
-            if (e > M_PI)    e -= 2.0 * M_PI;
-            cmd_vel.linear.x = twist_cmd.twist.linear.x = max_vel - kv * fabs(e);
-            cmd_vel.angular.z = twist_cmd.twist.angular.z = 0.4 * e + 0.01 * eo;
-            twist_cmd.twist.linear.z = 1.0; // linear.z is used as priority
+            if (e < -M_PI)
+                e += 2.0 * M_PI;
+            if (e > M_PI)
+                e -= 2.0 * M_PI;
+            cmd_vel.header.stamp = ros::Time::now();
+            twist_cmd.linear.x = cmd_vel.transform.translation.x = max_vel - kv * fabs(e);
+            twist_cmd.linear.y = cmd_vel.transform.translation.y = max_vel - kv * fabs(e);
+            twist_cmd.linear.z = cmd_vel.transform.translation.z = max_vel - kv * fabs(e);
+            twist_cmd.angular.x = cmd_vel.transform.rotation.x = 0.0;
+            twist_cmd.angular.y = cmd_vel.transform.rotation.y = 0.0;
+            twist_cmd.angular.z = cmd_vel.transform.rotation.z = 0.2 * e + 0.01 * eo;
+            cmd_vel.transform.rotation.w = 5.0; // this is used as priority
             eo = e;
         }
         // publish commands
         cmd_pub.publish(cmd_vel);
-        twist_pub.publish(twist_cmd);
+        if (publish_twist)
+            twist_pub.publish(twist_cmd);
         // print debug message
         if (target_path_index >= 0)
         {
-            printf("robot pose: x = %.3lf [m], y = %.3lf [m], yaw = %.3lf [deg]\n", x, y, yaw * 180.0 / M_PI);
-            printf("target path point: x = %.3lf [m], y = %.3lf [m]\n", path.poses[target_path_index].pose.position.x, path.poses[target_path_index].pose.position.y);
+            printf("robot pose: x = %.3lf [m], y = %.3lf [m], z = %.3lf, yaw = %.3lf [deg]\n", x, y, z, yaw * 180.0 / M_PI);
+            printf("target path point: x = %.3lf [m], y = %.3lf [m], z = %.3lf [m]\n",
+                path.poses[target_path_index].pose.position.x, path.poses[target_path_index].pose.position.y, path.poses[target_path_index].pose.position.z);
             printf("target path index = %d, path point num = %d\n", target_path_index, (int)path.poses.size());
-            printf("twist command: vel = %.3lf [m/sec], ang_vel = %.3lf [rad/sec]\n", twist_cmd.twist.linear.x, twist_cmd.twist.angular.z);
-            printf("param: stop = %d, iterate_following = %d\n", stop, iterate_following);
+            printf("twist command: x = %.3lf [m/sec], y = %.3lf [m/sec], z = %.3lf [m/sec], ang_vel = %.3lf [rad/sec], priority = %.1f\n",
+                twist_cmd.linear.x, twist_cmd.linear.y, twist_cmd.linear.z, twist_cmd.angular.z, cmd_vel.transform.rotation.w);
+            printf("param: stop = %d, iterate_following = %d, publish_twist = %d\n", stop, iterate_following, publish_twist);
             printf("\n");
         }
         else
         {
             printf("arrived at the end of the path.\n");
-            printf("robot pose: x = %.3lf [m], y = %.3lf [m], yaw = %.3lf [deg]\n", x, y, yaw * 180.0 / M_PI);
-            printf("param: stop = %d, iterate_following = %d\n", stop, iterate_following);
+            printf("robot pose: x = %.3lf [m], y = %.3lf [m], z = %.3lf, yaw = %.3lf [deg]\n", x, y, z, yaw * 180.0 / M_PI);
+            printf("param: stop = %d, iterate_following = %d, publish_twist = %d\n", stop, iterate_following, publish_twist);
             printf("\n");
         }
         // check iteration for path following
-        nh.getParam("/path_follower/iterate_following", iterate_following);
+        // nh.getParam("/path_follower/iterate_following", iterate_following);
         if (target_path_index < 0 && (int)path.poses.size() != 0 && iterate_following)
             prev_nearest_path_index = 0;
         // sleep
-        loop_rate.sleep();
-    }
-}
-
-void PathFollower::wait_for_new_path(void)
-{
-    nh.setParam("/nav_params/reach_at_goal", true);
-    bool is_new_path_data = false, is_new_map_data = false, finish_navigation = false;
-    ros::Rate loop_rate(10.0);
-    while (ros::ok())
-    {
-        ros::spinOnce();
-        geometry_msgs::TwistStamped twist_cmd;
-        twist_cmd.header.stamp = ros::Time::now();
-        twist_cmd.twist.linear.x = 0.0;
-        twist_cmd.twist.angular.z = 0.0;
-        twist_pub.publish(twist_cmd);
-        if (prev_nearest_path_index < 0 && !is_new_path_data)
-            is_new_path_data = true;
-        nh.getParam("/nav_params/is_new_map_data", is_new_map_data);
-        if (is_new_map_data)
-            nh.setParam("/nav_params/is_new_map_data", false);
-        nh.getParam("/nav_params/finish_navigation", finish_navigation);
-        if (finish_navigation)
-        {
-            printf("finish navigation from path_follower\n");
-            exit(0);
-        }
-        if (is_new_path_data && is_new_map_data)
-            break;
         loop_rate.sleep();
     }
 }

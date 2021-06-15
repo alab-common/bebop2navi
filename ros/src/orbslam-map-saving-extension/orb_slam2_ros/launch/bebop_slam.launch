@@ -2,7 +2,7 @@
 <launch>
     <arg name="octomap_enabled" default="false" />
 
-    <node pkg="orb_slam2_ros" type="Mono" name="orb_slam2" args="$(find orb_slam2_lib)/Vocabulary/ORBvoc.bin $(find orb_slam2_ros)/settings/bebop_localization.yaml" cwd="node" output="screen" >
+    <node pkg="orb_slam2_ros" type="Mono" name="orb_slam2" args="$(find orb_slam2_lib)/Vocabulary/ORBvoc.bin $(find orb_slam2_ros)/settings/bebop_slam.yaml" cwd="node" output="screen" >
        <param name="octomap_enabled" value="$(arg octomap_enabled)" /> <!-- needed for projected/gradient map-->
        <param name="octomap_resolution" value="0.02" />
        <param name="occupancy_projection_min_height" value="-0.1" />
