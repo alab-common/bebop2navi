@@ -1,0 +1,24 @@
+<!-- run velocity selector -->
+<launch >
+    <arg name="joy_cmd_name" default="/cmd_vel_joy" />
+    <arg name="path_follow_cmd_name" default="/cmd_vel_path_follow" />
+    <arg name="orb_slam_tracking_flag" default="/orb_slam_tracking_flag" />
+    <arg name="use_orb_slam_tracking_flag" default="false" />
+    <arg name="cmd_name_vs" default="/bebop/cmd_vel" />
+    <arg name="cmd_publish_hz_vs" default="10.0" />
+    <arg name="watch_dog_time_vs" default="1.0" />
+    <arg name="max_linear_velocity_vs" default="0.2" />
+    <arg name="max_angular_velocity_vs" default="0.2" />
+
+    <node name="velocity_selector" pkg="velocity_selector" type="velocity_selector" output="log" >
+        <param name="joy_cmd_name" value="$(arg joy_cmd_name)" type="string" />
+        <param name="path_follow_cmd_name" value="$(arg path_follow_cmd_name)" type="string" />
+        <param name="orb_slam_tracking_flag" value="$(arg orb_slam_tracking_flag)" type="string" />
+        <param name="use_orb_slam_tracking_flag" value="$(arg use_orb_slam_tracking_flag)" type="bool" />
+        <param name="cmd_name_vs" value="$(arg cmd_name_vs)" type="string" />
+        <param name="cmd_publish_hz_vs" value="$(arg cmd_publish_hz_vs)" type="double" />
+        <param name="watch_dog_time_vs" value="$(arg watch_dog_time_vs)" type="double" />
+        <param name="max_linear_velocity_vs" value="$(arg max_linear_velocity_vs)" type="double" />
+        <param name="max_angular_velocity_vs" value="$(arg max_angular_velocity_vs)" type="double" />
+    </node >
+</launch >

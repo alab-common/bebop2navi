@@ -32,7 +32,7 @@ public:
         joyCmdName_("/cmd_vel_joy"),
         pathFollowCmdName_("/cmd_vel_path_follow"),
         orbSLAMTrackingFlagName_("/orb_slam_tracking_flag"),
-        pubCmdName_("/cmd_vel"),
+        pubCmdName_("/bebop/cmd_vel"),
         useORBSLAMTrackingFlag_(false),
         cmdPublishHz_(20.0),
         watchDogTime_(3.0),
