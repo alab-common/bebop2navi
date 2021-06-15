@@ -5,7 +5,7 @@
     <arg name="orb_slam_tracking_flag" default="/orb_slam_tracking_flag" />
     <arg name="use_orb_slam_tracking_flag" default="false" />
     <arg name="cmd_name_vs" default="/bebop/cmd_vel" />
-    <arg name="cmd_publish_hz_vs" default="10.0" />
+    <arg name="cmd_publish_hz_vs" default="20.0" />
     <arg name="watch_dog_time_vs" default="1.0" />
     <arg name="max_linear_velocity_vs" default="0.2" />
     <arg name="max_angular_velocity_vs" default="0.2" />

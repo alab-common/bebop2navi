@@ -8,11 +8,9 @@
     <arg name="dist_interval" default="0.05" />
     <arg name="angle_interval" default="10.0" />
 
-<!--
     <include file="localization.launch" unless="$(arg mapping_mode)" >
         <arg name="use_pose_fuser" value="$(arg use_pose_fuser)" />
     </include >
--->
 
     <include file="$(find path_follower)/launch/path_recorder.launch" >
         <arg name="map_frame" default="$(arg map_frame)" />

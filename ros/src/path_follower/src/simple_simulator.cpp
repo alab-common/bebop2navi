@@ -18,8 +18,8 @@ private:
     ros::Subscriber cmd_sub;
     std::string map_frame, base_link_frame;
     std::string input_cmd_topic_name;
-    tf::TransformListener tf_listener;
-    double update_hz;
+    double update_hz, translation_scale;
+    double initial_x, initial_y, initial_z, initial_roll, initial_pitch, initial_yaw;
     geometry_msgs::TransformStamped cmd;
 
 public:
@@ -35,13 +35,26 @@ SimpleSimulator::SimpleSimulator(void):
     base_link_frame("/base_link2"),
     input_cmd_topic_name("/cmd_vel_path_follow"),
     update_hz(20.0),
-    tf_listener()
+    translation_scale(0.05),
+    initial_x(0.0),
+    initial_y(0.0),
+    initial_z(0.0),
+    initial_roll(0.0),
+    initial_pitch(0.0),
+    initial_yaw(0.0)
 {
     // read parameters
     nh.param("map_frame", map_frame, map_frame);
     nh.param("base_link_frame", base_link_frame, base_link_frame);
     nh.param("input_cmd_topic_name", input_cmd_topic_name, input_cmd_topic_name);
     nh.param("update_hz", update_hz, update_hz);
+    nh.param("translation_scale", translation_scale, translation_scale);
+    nh.param("initial_x", initial_x, initial_x);
+    nh.param("initial_y", initial_y, initial_y);
+    nh.param("initial_z", initial_z, initial_z);
+    nh.param("initial_roll", initial_roll, initial_roll);
+    nh.param("initial_pitch", initial_pitch, initial_pitch);
+    nh.param("initial_yaw", initial_yaw, initial_yaw);
     // subscriber
     cmd_sub = nh.subscribe(input_cmd_topic_name, 1, &SimpleSimulator::cmd_callback, this);
 }
@@ -52,35 +65,16 @@ void SimpleSimulator::cmd_callback(const geometry_msgs::TransformStamped::ConstP
 }
 
 void SimpleSimulator::spin(void) {
+    double x = initial_x;
+    double y = initial_y;
+    double z = initial_z;
+    double roll = initial_roll;
+    double pitch = initial_pitch;
+    double yaw = initial_yaw;
     tf::TransformBroadcaster br;
     ros::Rate loop_rate(update_hz);
     while (ros::ok()) {
         ros::spinOnce();
-        ros::spinOnce();
-        // read robot pose (base_link_frame) from tf tree in map_frame
-        ros::Time now = ros::Time::now();
-        tf::StampedTransform map2base_link;
-        try
-        {
-            tf_listener.waitForTransform(map_frame, base_link_frame, now, ros::Duration(1.0));
-            tf_listener.lookupTransform(map_frame, base_link_frame, now, map2base_link);
-        }
-        catch (tf::TransformException ex)
-        {
-            ROS_ERROR("%s", ex.what());
-            continue;
-        }
-        // read the 3d robot pose
-        double x = map2base_link.getOrigin().x();
-        double y = map2base_link.getOrigin().y();
-        double z = map2base_link.getOrigin().z();
-        tf::Quaternion q(map2base_link.getRotation().x(),
-            map2base_link.getRotation().y(),
-            map2base_link.getRotation().z(),
-            map2base_link.getRotation().w());
-        double roll, pitch, yaw;
-        tf::Matrix3x3 m(q);
-        m.getRPY(roll, pitch, yaw);
         // update the pose
         double cr = cos(roll);
         double sr = sin(roll);
@@ -95,9 +89,9 @@ void SimpleSimulator::spin(void) {
         double wx = cmd.transform.rotation.x;
         double wy = cmd.transform.rotation.y;
         double wz = cmd.transform.rotation.z;
-        x += cp * cy * vx + (sr * sp * sy - cr * sy) * vy + (cr * sp * cy + sr * sy) * vz;
-        y += cp * sy * vx + (sr * sp * sy + cr * cy) * vy + (cr * sp * sy - sr * cy) * vz;
-        z += -sp * vx + sr * cp * vy + cr * cp * vz;
+        x += translation_scale * (cp * cy * vx + (sr * sp * sy - cr * sy) * vy + (cr * sp * cy + sr * sy) * vz);
+        y += translation_scale * (cp * sy * vx + (sr * sp * sy + cr * cy) * vy + (cr * sp * sy - sr * cy) * vz);
+        z += translation_scale * (-sp * vx + sr * cp * vy + cr * cp * vz);
         roll += 1.0 * wx + sr * tp * wy + cr * tp * wz;
         pitch += 0.0 * wx + cr * wy - sr * wz;
         yaw += 0.0 * wx + sr / cp * wy + cr / cp * wz;
@@ -115,10 +109,16 @@ void SimpleSimulator::spin(void) {
             yaw += 2.0 * M_PI;
         // broadcast tf
         tf::Transform tf;
+        tf::Quaternion q;
         tf.setOrigin(tf::Vector3(x, y, z));
         q.setRPY(roll, pitch, yaw);
         tf.setRotation(q);
         br.sendTransform(tf::StampedTransform(tf, ros::Time::now(), map_frame, base_link_frame));
+        // print info
+        printf("x = %.3lf [m], y = %.3lf [m], z = %.3lf [m]\n", x, y, z);
+        printf("roll = %.3lf [deg], pitch = %.3lf [deg], yaw = %.3lf [deg]\n",
+            roll * 180.0 / M_PI, pitch * 180.0 / M_PI, yaw * 180.0 / M_PI);
+        printf("\n");
         // sleep
         loop_rate.sleep();
     }

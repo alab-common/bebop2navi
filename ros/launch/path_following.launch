@@ -1,0 +1,90 @@
+<!-- path following launch -->
+<launch >
+    <!-- fundamental parameters -->
+    <arg name="map_frame" default="/map" />
+    <arg name="base_link_frame" default="/base_link2" />
+
+    <!-- parameters for the localization -->
+    <!-- The pose fuser will be used if it is true. -->
+    <arg name="use_pose_fuser" default="true" />
+
+    <!-- parameters for the velocity selector -->
+    <!-- The robot will stop if ORB SLAM fails to track if it is true. -->
+    <arg name="use_orb_slam_tracking_flag" default="false" />
+    <!-- These are actual maximum velocities. -->
+    <arg name="max_linear_velocity_vs" default="0.2" />
+    <arg name="max_angular_velocity_vs" default="0.2" />
+
+    <!-- parameters for the joy controller -->
+    <arg name="joy_velocities_coef" default="0.1" />
+
+    <!-- parameters for the path following -->
+    <arg name="look_ahead_dist" default="0.05" />
+    <arg name="max_linear_vel" default="0.1" />
+    <arg name="max_angular_vel" default="0.1" />
+    <!-- speed down parameters -->
+    <arg name="bvy" default="1.0" />
+    <arg name="bvz" default="1.0" />
+    <arg name="bvyaw" default="1.0" />
+    <!-- PD gain parameters -->
+    <arg name="pgy" default="0.3" />
+    <arg name="dgy" default="0.05" />
+    <arg name="pgz" default="0.3" />
+    <arg name="dgz" default="0.05" />
+    <arg name="pgyaw" default="0.3" />
+    <arg name="dgyaw" default="0.05" />
+    <!-- If the positional displacement exceeds it, the path follower will publish zero velocities. -->
+    <arg name="displacement_threshold" default="0.2" />
+    <!-- This should be true.
+         If not, the robot will immediately start following after launching this script. -->
+    <arg name="stop" default="true" />
+    <!-- The robot will cyclically follow a loop path if it is true. -->
+    <arg name="iterate_following" default="false" />
+    <arg name="cmd_publish_hz" default="20.0" />
+
+
+
+    <!-- Followings are actual programs for the path following. -->
+
+    <!-- localization -->
+    <include file="localization.launch" >
+        <arg name="use_pose_fuser" value="$(arg use_pose_fuser)" />
+    </include >
+
+    <!-- velocity selector -->
+    <include file="$(find velocity_selector)/launch/velocity_selector.launch" >
+        <arg name="use_orb_slam_tracking_flag" value="$(arg use_orb_slam_tracking_flag)" />
+        <arg name="max_linear_velocity_vs" value="$(arg max_linear_velocity_vs)" />
+        <arg name="max_angular_velocity_vs" value="$(arg max_angular_velocity_vs)" />
+    </include >
+
+    <!-- joy controller -->
+    <include file="$(find joy_controller)/launch/joy_controller.launch" >
+        <arg name="publish_twist" value="false" />
+        <arg name="cmd_publish_hz" value="$(arg cmd_publish_hz)" />
+        <arg name="joy_velocities_coef" value="$(arg joy_velocities_coef)" />
+    </include >
+
+    <!-- path follower -->
+    <include file="$(find path_follower)/launch/path_follower.launch" >
+        <arg name="publish_twist" value="false" />
+        <arg name="map_frame" value="$(arg map_frame)" />
+        <arg name="base_link_frame" value="$(arg base_link_frame)" />
+        <arg name="look_ahead_dist" value="$(arg look_ahead_dist)" />
+        <arg name="max_linear_vel" value="$(arg max_linear_vel)" />
+        <arg name="max_angular_vel" value="$(arg max_angular_vel)" />
+        <arg name="bvy" value="$(arg bvy)" />
+        <arg name="bvz" value="$(arg bvz)" />
+        <arg name="bvyaw" value="$(arg bvyaw)" />
+        <arg name="pgy" value="$(arg pgy)" />
+        <arg name="dgy" value="$(arg dgy)" />
+        <arg name="pgz" value="$(arg pgz)" />
+        <arg name="dgz" value="$(arg dgz)" />
+        <arg name="pgyaw" value="$(arg pgyaw)" />
+        <arg name="dgyaw" value="$(arg dgyaw)" />
+        <arg name="cmd_publish_hz" value="$(arg cmd_publish_hz)" />
+        <arg name="displacement_threshold" value="$(arg displacement_threshold)" />
+        <arg name="stop" value="$(arg stop)" />
+        <arg name="iterate_following" value="$(arg iterate_following)" />
+    </include >
+</launch >

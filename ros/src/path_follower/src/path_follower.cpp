@@ -23,8 +23,9 @@ private:
     std::string input_path_topic_name, output_cmd_topic_name;
     nav_msgs::Path path;
     tf::TransformListener tf_listener;
-    double look_ahead_dist, max_vel, kv;
-    double cmd_publish_hz;
+    double look_ahead_dist, max_linear_vel, max_angular_vel;
+    double bvy, bvz, bvyaw, pgy, dgy, pgz, dgz, pgyaw, dgyaw;
+    double cmd_publish_hz, displacement_threshold;
     bool iterate_following, publish_twist;
     int nearest_path_index, prev_nearest_path_index;
 
@@ -33,6 +34,7 @@ public:
     ~PathFollower() {};
     void path_callback(const nav_msgs::Path::ConstPtr& msg);
     void spin(void);
+    double check_velocity(double v, double vmax);
 };
 
 PathFollower::PathFollower():
@@ -41,10 +43,20 @@ PathFollower::PathFollower():
     base_link_frame("/base_link2"),
     input_path_topic_name("/target_path"),
     output_cmd_topic_name("/cmd_vel_path_follow"),
-    look_ahead_dist(0.2),
-    max_vel(0.1),
-    kv(0.06),
+    look_ahead_dist(0.05),
+    max_linear_vel(0.1),
+    max_angular_vel(0.1),
+    bvy(1.0),
+    bvz(1.0),
+    bvyaw(1.0),
+    pgy(0.4),
+    dgy(0.05),
+    pgz(0.4),
+    dgz(0.05),
+    pgyaw(0.25),
+    dgyaw(0.05),
     cmd_publish_hz(20.0),
+    displacement_threshold(1.0),
     prev_nearest_path_index(-1),
     iterate_following(false),
     publish_twist(false),
@@ -56,15 +68,25 @@ PathFollower::PathFollower():
     nh.param("input_path_topic_name", input_path_topic_name, input_path_topic_name);
     nh.param("output_cmd_topic_name", output_cmd_topic_name, output_cmd_topic_name);
     nh.param("look_ahead_dist", look_ahead_dist, look_ahead_dist);
-    nh.param("max_vel", max_vel, max_vel);
-    nh.param("kv", kv, kv);
+    nh.param("max_linear_vel", max_linear_vel, max_linear_vel);
+    nh.param("max_angular_vel", max_angular_vel, max_angular_vel);
+    nh.param("bvy", bvy, bvy);
+    nh.param("bvz", bvz, bvz);
+    nh.param("bvyaw", bvyaw, bvyaw);
+    nh.param("pgy", pgy, pgy);
+    nh.param("dgy", dgy, dgy);
+    nh.param("pgz", pgz, pgz);
+    nh.param("dgz", dgz, dgz);
+    nh.param("pgyaw", pgyaw, pgyaw);
+    nh.param("dgyaw", dgyaw, dgyaw);
     nh.param("cmd_publish_hz", cmd_publish_hz, cmd_publish_hz);
+    nh.param("displacement_threshold", displacement_threshold, displacement_threshold);
     nh.param("iterate_following", iterate_following, iterate_following);
     nh.param("publish_twist", publish_twist, publish_twist);
     // subscriber
     path_sub = nh.subscribe(input_path_topic_name, 1, &PathFollower::path_callback, this);
     // publisher
-    cmd_pub = nh.advertise<geometry_msgs::Twist>(output_cmd_topic_name, 10);
+    cmd_pub = nh.advertise<geometry_msgs::TransformStamped>(output_cmd_topic_name, 10);
     if (publish_twist)
         twist_pub = nh.advertise<geometry_msgs::Twist>("/bebop/cmd_vel", 10);
 }
@@ -77,7 +99,7 @@ void PathFollower::path_callback(const nav_msgs::Path::ConstPtr& msg)
 
 void PathFollower::spin(void)
 {
-    double eo = 0.0;
+    double eyo = 0.0, ezo = 0.0, eyawo = 0.0;
     ros::Rate loop_rate(cmd_publish_hz);
     while (ros::ok())
     {
@@ -127,7 +149,8 @@ void PathFollower::spin(void)
         {
             double dx = path.poses[i].pose.position.x - x;
             double dy = path.poses[i].pose.position.y - y;
-            double dl = sqrt(dx * dx + dy * dy);
+            double dz = path.poses[i].pose.position.z - z;
+            double dl = sqrt(dx * dx + dy * dy + dz * dz);
             if (i == i0)
             {
                 nearest_path_index = i;
@@ -146,14 +169,15 @@ void PathFollower::spin(void)
         {
             double dx = path.poses[i].pose.position.x - x;
             double dy = path.poses[i].pose.position.y - y;
-            double dl = sqrt(dx * dx + dy * dy);
+            double dz = path.poses[i].pose.position.z - z;
+            double dl = sqrt(dx * dx + dy * dy + dz * dz);
             if (dl >= look_ahead_dist)
             {
                 target_path_index = i;
                 break;
             }
         }
-        // determine twist command
+        // calculate the control input
         geometry_msgs::TransformStamped cmd_vel;
         geometry_msgs::Twist twist_cmd;
         bool stop;
@@ -169,35 +193,58 @@ void PathFollower::spin(void)
             twist_cmd.angular.y = cmd_vel.transform.rotation.y = 0.0;
             twist_cmd.angular.z = cmd_vel.transform.rotation.z = 0.0;
             cmd_vel.transform.rotation.w = 0.0; // this is used as priority
-            eo = 0.0;
+            eyo = ezo = eyawo = 0.0;
         }
         else
         {
-            // compute deviation from the path and determine twist_cmd based on PD control
-            double dx = path.poses[target_path_index].pose.position.x - path.poses[target_path_index - 1].pose.position.x;
-            double dy = path.poses[target_path_index].pose.position.y - path.poses[target_path_index - 1].pose.position.y;
-            double dz = path.poses[target_path_index].pose.position.z - path.poses[target_path_index - 1].pose.position.z;
-            double th = atan2(dy, dx);
-            double x2p = dx * cos(th) + dy * sin(th);
-            dx = path.poses[target_path_index].pose.position.x - x;
-            dy = path.poses[target_path_index].pose.position.y - y;
-            double xrp = dx * cos(th) + dy * sin(th);
-            double yrp = -dx * sin(th) + dy * cos(th);
-            double t = atan2(dy, dx);
-            double e = t - yaw;
-            if (e < -M_PI)
-                e += 2.0 * M_PI;
-            if (e > M_PI)
-                e -= 2.0 * M_PI;
+            // compute deviation from the path and determine the control input based on PD control
+            tf::Quaternion pq(path.poses[target_path_index].pose.orientation.x,
+                path.poses[target_path_index].pose.orientation.y,
+                path.poses[target_path_index].pose.orientation.z,
+                path.poses[target_path_index].pose.orientation.w);
+            double proll, ppitch, pyaw;
+            tf::Matrix3x3 pm(pq);
+            pm.getRPY(proll, ppitch, pyaw);
+            double dx = path.poses[target_path_index].pose.position.x - x;
+            double dy = path.poses[target_path_index].pose.position.y - y;
+            double dz = path.poses[target_path_index].pose.position.z - z;
+            double dl = sqrt(dx * dx + dy * dy + dz * dz);
+            double dyaw = atan2(dy, dx);
+            double dpitch = atan2(dz, sqrt(dx * dx + dy * dy));
+            // double ex = dx * cos(pyaw) + dy * sin(pyaw);
+            double ey = -dx * sin(pyaw) + dy * cos(pyaw);
+            double ez = dz;
+            double eyaw = pyaw - yaw;
+            if (eyaw < -M_PI)
+                eyaw += 2.0 * M_PI;
+            if (eyaw > M_PI)
+                eyaw -= 2.0 * M_PI;
+            double vx = max_linear_vel - bvy * fabs(ey) - bvz * fabs(ez) - bvyaw * fabs(eyaw);
+            if (vx < 0.0)
+                vx = 0.0;
+            double vy = pgy * ey + dgy * eyo;
+            double vz = pgz * ez + dgz * ezo;
+            double wz = pgy * eyaw + dgy * eyawo;
+            vx = check_velocity(vx, max_linear_vel);
+            vy = check_velocity(vy, max_linear_vel);
+            vz = check_velocity(vz, max_linear_vel);
+            wz = check_velocity(wz, max_angular_vel);
+            if (dl > displacement_threshold) {
+                vx = vy = vz = wz = 0.0;
+                ROS_WARN("The displacement for the path following exceeds the threshold (%.5lf [m])",
+                    displacement_threshold);
+            }
             cmd_vel.header.stamp = ros::Time::now();
-            twist_cmd.linear.x = cmd_vel.transform.translation.x = max_vel - kv * fabs(e);
-            twist_cmd.linear.y = cmd_vel.transform.translation.y = max_vel - kv * fabs(e);
-            twist_cmd.linear.z = cmd_vel.transform.translation.z = max_vel - kv * fabs(e);
+            twist_cmd.linear.x = cmd_vel.transform.translation.x = vx;
+            twist_cmd.linear.y = cmd_vel.transform.translation.y = vy;
+            twist_cmd.linear.z = cmd_vel.transform.translation.z = vz;
             twist_cmd.angular.x = cmd_vel.transform.rotation.x = 0.0;
             twist_cmd.angular.y = cmd_vel.transform.rotation.y = 0.0;
-            twist_cmd.angular.z = cmd_vel.transform.rotation.z = 0.2 * e + 0.01 * eo;
+            twist_cmd.angular.z = cmd_vel.transform.rotation.z = wz;
             cmd_vel.transform.rotation.w = 5.0; // this is used as priority
-            eo = e;
+            eyo = ey;
+            ezo = ez;
+            eyawo = eyaw;
         }
         // publish commands
         cmd_pub.publish(cmd_vel);
@@ -230,6 +277,20 @@ void PathFollower::spin(void)
         loop_rate.sleep();
     }
 }
+
+double PathFollower::check_velocity(double v, double vmax)
+{
+    if (std::isnan(v)) {
+        ROS_WARN("nan velocity command is detected.");
+        return 0.0;
+    }
+    if (v > vmax)
+        v = vmax;
+    if (v < -vmax)
+        v = -vmax;
+    return v;
+}
+
 
 int main(int argc, char** argv)
 {

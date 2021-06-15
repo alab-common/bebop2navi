@@ -1,10 +1,8 @@
-<!-- path server launch
-    Copyright © 2021 Naoki Akai. All rights reserved.
- -->
+<!-- path server launch -->
 
 <launch >
     <!-- arguments -->
-    <arg name="path_file" default="$(find path_follower)/data/path.txt" />
+    <arg name="path_file" default="$(find path_follower)/data/test_path1.txt" />
     <arg name="input_path_topic_name" default="/recorded_path" />
 
     <!-- path saver -->

@@ -1,0 +1,28 @@
+<!-- simple simulator launch -->
+<launch >
+    <arg name="map_frame" default="/map" />
+    <arg name="base_link_frame" default="/base_link2" />
+    <arg name="input_cmd_topic_name" default="/cmd_vel_path_follow" />
+    <arg name="update_hz" default="20.0" />
+    <arg name="translation_scale" default="0.05" />
+    <arg name="initial_x" default="0.0" />
+    <arg name="initial_y" default="0.0" />
+    <arg name="initial_z" default="0.0" />
+    <arg name="initial_roll" default="0.0" />
+    <arg name="initial_pitch" default="0.0" />
+    <arg name="initial_yaw" default="0.0" />
+
+    <node name="simple_simulator" pkg="path_follower" type="simple_simulator" >
+        <param name="/map_frame" value="$(arg map_frame)" type="string" />
+        <param name="/base_link_frame" value="$(arg base_link_frame)" type="string" />
+        <param name="/input_cmd_topic_name" value="$(arg input_cmd_topic_name)" type="string" />
+        <param name="/update_hz" value="$(arg update_hz)" type="double" />
+        <param name="/translation_scale" value="$(arg translation_scale)" type="double" />
+        <param name="/initial_x" value="$(arg initial_x)" type="double" />
+        <param name="/initial_y" value="$(arg initial_y)" type="double" />
+        <param name="/initial_z" value="$(arg initial_z)" type="double" />
+        <param name="/initial_roll" value="$(arg initial_roll)" type="double" />
+        <param name="/initial_pitch" value="$(arg initial_pitch)" type="double" />
+        <param name="/initial_yaw" value="$(arg initial_yaw)" type="double" />    
+    </node >
+</launch >

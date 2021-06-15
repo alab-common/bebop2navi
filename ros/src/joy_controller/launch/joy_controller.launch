@@ -11,7 +11,7 @@
     <arg name="joy_topic_name" default="/joy" />
     <arg name="joy_controller_topic_name" default="/cmd_vel_joy" />
     <arg name="publish_twist" default="false" />
-    <arg name="cmd_publish_hz" default="10.0" />
+    <arg name="cmd_publish_hz" default="20.0" />
     <arg name="joy_velocities_coef" default="0.1" />
 
     <!-- joystick node -->

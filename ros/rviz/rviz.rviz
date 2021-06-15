@@ -6,6 +6,7 @@ Panels:
       Expanded:
         - /Global Options1
         - /Status1
+        - /TF1
         - /TF1/Frames1
       Splitter Ratio: 0.5
     Tree Height: 291
@@ -27,7 +28,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: ORB SLAM tracking image
+    SyncSource: ""
 Preferences:
   PromptSaveOnExit: true
 Toolbars:
@@ -40,44 +41,29 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: false
-        base_link:
-          Value: false
         base_link2:
           Value: true
-        camera_base_link:
-          Value: false
-        camera_optical:
-          Value: false
-        camera_pan_link:
-          Value: false
-        camera_tilt_link:
-          Value: false
         camera_world:
-          Value: false
+          Value: true
         fused_frame:
-          Value: false
+          Value: true
         map:
           Value: true
-        odom:
-          Value: false
         orb_slam2/frame:
-          Value: false
+          Value: true
         orb_slam2/map_frame:
-          Value: false
-      Marker Scale: 1
+          Value: true
+      Marker Scale: 0.5
       Name: TF
       Show Arrows: true
       Show Axes: true
       Show Names: true
       Tree:
         camera_world:
-          orb_slam2/frame:
-            orb_slam2/map_frame:
+          map:
+            fused_frame:
               base_link2:
                 {}
-        map:
-          fused_frame:
-            {}
       Update Interval: 0
       Value: true
     - Alpha: 0.5
@@ -244,7 +230,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 3.9234721660614014
+      Distance: 2.1247878074645996
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -259,10 +245,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.4603976011276245
+      Pitch: 1.1247963905334473
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 3.1354050636291504
+      Yaw: 3.035405397415161
     Saved: ~
 Window Geometry:
   Displays:
@@ -282,5 +268,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1267
-  X: 299
+  X: 333
   Y: 118
