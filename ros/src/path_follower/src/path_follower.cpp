@@ -25,7 +25,7 @@ private:
     tf::TransformListener tf_listener;
     double look_ahead_dist, max_linear_vel, max_angular_vel;
     double bvy, bvz, bvyaw, pgy, dgy, pgz, dgz, pgyaw, dgyaw;
-    double cmd_publish_hz, displacement_threshold;
+    double cmd_publish_hz, displacement_threshold, translation_scale;
     bool iterate_following, publish_twist;
     int nearest_path_index, prev_nearest_path_index;
 
@@ -57,6 +57,7 @@ PathFollower::PathFollower():
     dgyaw(0.05),
     cmd_publish_hz(20.0),
     displacement_threshold(1.0),
+    translation_scale(1.0),
     prev_nearest_path_index(-1),
     iterate_following(false),
     publish_twist(false),
@@ -81,6 +82,7 @@ PathFollower::PathFollower():
     nh.param("dgyaw", dgyaw, dgyaw);
     nh.param("cmd_publish_hz", cmd_publish_hz, cmd_publish_hz);
     nh.param("displacement_threshold", displacement_threshold, displacement_threshold);
+    nh.param("translation_scale", translation_scale, translation_scale);
     nh.param("iterate_following", iterate_following, iterate_following);
     nh.param("publish_twist", publish_twist, publish_twist);
     // subscriber
@@ -114,6 +116,22 @@ void PathFollower::spin(void)
         }
         catch (tf::TransformException ex)
         {
+            // publish zero velocities
+            geometry_msgs::TransformStamped cmd_vel;
+            geometry_msgs::Twist twist_cmd;
+            cmd_vel.header.stamp = ros::Time::now();
+            twist_cmd.linear.x = cmd_vel.transform.translation.x = 0.0;
+            twist_cmd.linear.y = cmd_vel.transform.translation.y = 0.0;
+            twist_cmd.linear.z = cmd_vel.transform.translation.z = 0.0;
+            twist_cmd.angular.x = cmd_vel.transform.rotation.x = 0.0;
+            twist_cmd.angular.y = cmd_vel.transform.rotation.y = 0.0;
+            twist_cmd.angular.z = cmd_vel.transform.rotation.z = 0.0;
+            cmd_vel.transform.rotation.w = 0.0; // this is used as priority
+            cmd_pub.publish(cmd_vel);
+            if (publish_twist)
+                twist_pub.publish(twist_cmd);
+            eyo = ezo = eyawo = 0.0;
+            ROS_WARN("%s cannot be read from the tf tree. Published zero velocities.", base_link_frame.c_str());
             ROS_ERROR("%s", ex.what());
             continue;
         }
@@ -214,6 +232,8 @@ void PathFollower::spin(void)
             // double ex = dx * cos(pyaw) + dy * sin(pyaw);
             double ey = -dx * sin(pyaw) + dy * cos(pyaw);
             double ez = dz;
+            ey /= translation_scale;
+            ez /= translation_scale;
             double eyaw = pyaw - yaw;
             if (eyaw < -M_PI)
                 eyaw += 2.0 * M_PI;

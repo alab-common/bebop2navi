@@ -1,11 +1,11 @@
 <!-- path recording launch -->
 <launch >
-    <arg name="mapping_mode" dafault="false" />
+    <arg name="mapping_mode" default="false" />
     <arg name="use_pose_fuser" default="true" />
     <arg name="map_frame" default="/map" />
     <arg name="base_link_frame" default="/base_link2" />
     <arg name="output_path_topic_name" default="/recorded_path" />
-    <arg name="dist_interval" default="0.05" />
+    <arg name="dist_interval" default="0.02" />
     <arg name="angle_interval" default="10.0" />
 
     <include file="localization.launch" unless="$(arg mapping_mode)" >

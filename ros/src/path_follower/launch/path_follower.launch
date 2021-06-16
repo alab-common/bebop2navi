@@ -2,7 +2,7 @@
 
 <launch >
     <!-- arguments -->
-    <arg name="path_file" default="$(find path_follower)/data/test_path1.txt" />
+    <arg name="path_file" default="$(find path_follower)/data/kkzt1.txt" />
     <arg name="map_frame" default="/map" />
     <arg name="base_link_frame" default="/base_link2" />
     <arg name="path_topic_name" default="/target_path" />
@@ -21,6 +21,7 @@
     <arg name="pgyaw" default="0.3" />
     <arg name="dgyaw" default="0.05" />
     <arg name="cmd_publish_hz" default="20.0" />
+    <arg name="translation_scale" default="0.1" />
     <arg name="displacement_threshold" default="0.2" />
     <arg name="stop" default="true" />
     <arg name="iterate_following" default="false" />
@@ -53,6 +54,7 @@
         <param name="/dgyaw" value="$(arg dgyaw)" type="double" />
         <param name="/cmd_publish_hz" value="$(arg cmd_publish_hz)" type="double" />
         <param name="/displacement_threshold" value="$(arg displacement_threshold)" type="double" />
+        <param name="/translation_scale" value="$(arg translation_scale)" type="double" />
         <param name="/stop" value="$(arg stop)" type="bool" />
         <param name="/iterate_following" value="$(arg iterate_following)" type="string" />
         <param name="/publish_twist" value="$(arg publish_twist)" type="bool" />

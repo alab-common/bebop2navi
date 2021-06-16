@@ -1,6 +1,7 @@
 <!-- localization launch using ORB SLAM2 or pose fuser -->
 <launch >
     <arg name="use_pose_fuser" default="true" />
+    <arg name="output_orb_log_screen" default="true" />
 
     <include file="tf.launch" >
         <arg name="use_pose_fuser" value="$(arg use_pose_fuser)" />
