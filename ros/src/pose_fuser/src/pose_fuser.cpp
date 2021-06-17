@@ -268,7 +268,7 @@ void PoseFuser::KalmanFilter(Eigen::VectorXd currPose, Eigen::Matrix<double, 6, 
         for (int j = 0; j < 6; j++)
         slamCovMat(i, j) = slamMsg.pose.covariance[i * 6 + j];
     }
-    slamCovMat = 1.0 * I;
+    slamCovMat = 0.01 * I;
     slamCovMat = transformMat * slamCovMat * transformMat.transpose();
 
     // transform position & attitude from camera world to map

@@ -10,13 +10,13 @@
     <arg name="fused_frame" default="/fused_frame" />
     <arg name="fused_pose_hz" default="30.0" />
     <arg name="slam_lost_time" default="1.0" />
-    <arg name="scale_factor" default="0.1" />
-    <arg name="initial_cov_xx" default="3.5" />
-    <arg name="initial_cov_yy" default="3.5" />
-    <arg name="initial_cov_zz" default="3.5" />
-    <arg name="initial_cov_rollroll" default="3.5" />
-    <arg name="initial_cov_pitchpitch" default="3.5" />
-    <arg name="initial_cov_yawyaw" default="3.5" />
+    <arg name="scale_factor" default="0.3" />
+    <arg name="initial_cov_xx" default="0.1" />
+    <arg name="initial_cov_yy" default="0.1" />
+    <arg name="initial_cov_zz" default="0.1" />
+    <arg name="initial_cov_rollroll" default="0.1" />
+    <arg name="initial_cov_pitchpitch" default="0.1" />
+    <arg name="initial_cov_yawyaw" default="0.1" />
     <arg name="initial_cov" default="1e-6" />
 
     <!-- rosparam -->

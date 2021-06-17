@@ -1,6 +1,6 @@
 <!-- path saving launch -->
 <launch >
-    <arg name="path_file" default="$(find path_follower)/data/kkzt_straight.txt" />
+    <arg name="path_file" default="$(find path_follower)/data/nic6f.txt" />
     <arg name="input_path_topic_name" default="/recorded_path" />
 
     <include file="$(find path_follower)/launch/path_saver.launch" >

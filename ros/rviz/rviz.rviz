@@ -6,9 +6,10 @@ Panels:
       Expanded:
         - /Global Options1
         - /Status1
-        - /TF1
+        - /TF1/Frames1
+        - /TF1/Tree1
       Splitter Ratio: 0.5
-    Tree Height: 301
+    Tree Height: 325
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
@@ -61,7 +62,7 @@ Visualization Manager:
         orb_slam2/frame:
           Value: false
         orb_slam2/map_frame:
-          Value: false
+          Value: true
       Marker Scale: 0.5
       Name: TF
       Show Arrows: true
@@ -71,11 +72,11 @@ Visualization Manager:
         camera_world:
           orb_slam2/frame:
             orb_slam2/map_frame:
-              base_link2:
-                {}
+              {}
         map:
           fused_frame:
-            {}
+            base_link2:
+              {}
       Update Interval: 0
       Value: true
     - Alpha: 0.5
@@ -96,6 +97,18 @@ Visualization Manager:
       Plane Cell Count: 10
       Reference Frame: <Fixed Frame>
       Value: true
+    - Class: rviz/Image
+      Enabled: false
+      Image Topic: /bebop/image_raw
+      Max Value: 1
+      Median window: 5
+      Min Value: 0
+      Name: Bebop image raw
+      Normalize Range: true
+      Queue Size: 2
+      Transport Hint: raw
+      Unreliable: false
+      Value: false
     - Class: rviz/Image
       Enabled: true
       Image Topic: /orb_slam2/frame
@@ -172,7 +185,7 @@ Visualization Manager:
       Buffer Length: 1
       Class: rviz/Path
       Color: 170; 0; 255
-      Enabled: false
+      Enabled: true
       Head Diameter: 0.300000012
       Head Length: 0.200000003
       Length: 0.300000012
@@ -190,7 +203,7 @@ Visualization Manager:
       Shaft Length: 0.100000001
       Topic: /recorded_path
       Unreliable: false
-      Value: false
+      Value: true
     - Alpha: 1
       Buffer Length: 1
       Class: rviz/Path
@@ -219,8 +232,38 @@ Visualization Manager:
       Marker Topic: /path_following_target_point
       Name: Path follower target point
       Namespaces:
-        basic_shapes: true
+        {}
       Queue Size: 100
+      Value: true
+    - Alpha: 1
+      Axes Length: 1
+      Axes Radius: 0.100000001
+      Class: rviz/PoseWithCovariance
+      Color: 255; 25; 0
+      Covariance:
+        Orientation:
+          Alpha: 0.5
+          Color: 255; 255; 127
+          Color Style: Unique
+          Frame: Local
+          Offset: 1
+          Scale: 1
+          Value: true
+        Position:
+          Alpha: 0.300000012
+          Color: 204; 51; 204
+          Scale: 1
+          Value: true
+        Value: true
+      Enabled: true
+      Head Length: 0.100000001
+      Head Radius: 0.00999999978
+      Name: Fused pose
+      Shaft Length: 0.100000001
+      Shaft Radius: 0.0500000007
+      Shape: Arrow
+      Topic: /fused_pose
+      Unreliable: false
       Value: true
   Enabled: true
   Global Options:
@@ -247,35 +290,37 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 2.08489394
+      Distance: 2.97368789
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0
-        Y: 0
-        Z: 0
+        X: -0.000254856423
+        Y: -0.00080279744
+        Z: 0.0215852167
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.0500000007
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 0.994796336
-      Target Frame: <Fixed Frame>
+      Pitch: 0.804796338
+      Target Frame: base_link2
       Value: Orbit (rviz)
-      Yaw: 3.06541348
+      Yaw: 2.86040902
     Saved: ~
 Window Geometry:
+  Bebop image raw:
+    collapsed: false
   Displays:
     collapsed: false
-  Height: 876
+  Height: 906
   Hide Left Dock: false
   Hide Right Dock: false
   ORB SLAM tracking image:
     collapsed: false
-  QMainWindow State: 000000ff00000000fd0000000400000000000001f7000002c0fc0200000009fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000006100fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000b0fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c0061007900730100000028000001f8000000d700fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000002e004f0052004200200053004c0041004d00200074007200610063006b0069006e006700200069006d0061006700650100000226000000c20000001600ffffff000000010000015f000002c0fc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a005600690065007700730100000028000002c0000000ad00fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000004f300000060fc0100000002fb0000000800540069006d00650100000000000004f30000030000fffffffb0000000800540069006d0065010000000000000450000000000000000000000191000002c000000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd0000000400000000000001f7000002defc020000000afb0000001200530065006c0065006300740069006f006e00000001e10000009b0000006100fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000b0fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000002800000210000000d700fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000002e004f0052004200200053004c0041004d00200074007200610063006b0069006e006700200069006d006100670065010000023e000000c80000001600fffffffb0000001e004200650062006f007000200069006d00610067006500200072006100770000000247000000bf0000001600ffffff000000010000015f000002defc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a005600690065007700730100000028000002de000000ad00fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000005af00000060fc0100000002fb0000000800540069006d00650100000000000005af0000030000fffffffb0000000800540069006d006501000000000000045000000000000000000000024d000002de00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Time:
@@ -284,6 +329,6 @@ Window Geometry:
     collapsed: false
   Views:
     collapsed: false
-  Width: 1267
-  X: 370
-  Y: 98
+  Width: 1455
+  X: 342
+  Y: 146
