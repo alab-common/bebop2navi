@@ -19,13 +19,13 @@
     <arg name="joy_velocities_coef" default="0.1" />
 
     <!-- parameters for the path following -->
-    <arg name="look_ahead_dist" default="0.05" />
+    <arg name="look_ahead_dist" default="0.1" />
     <arg name="max_linear_vel" default="0.1" />
     <arg name="max_angular_vel" default="0.1" />
     <!-- speed down parameters -->
-    <arg name="bvy" default="1.0" />
-    <arg name="bvz" default="1.0" />
-    <arg name="bvyaw" default="1.0" />
+    <arg name="bvy" default="0.01" />
+    <arg name="bvz" default="0.01" />
+    <arg name="bvyaw" default="0.01" />
     <!-- PD gain parameters -->
     <arg name="pgy" default="0.3" />
     <arg name="dgy" default="0.05" />

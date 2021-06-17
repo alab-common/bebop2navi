@@ -12,13 +12,14 @@
 #include <geometry_msgs/TransformStamped.h>
 #include <tf/transform_broadcaster.h>
 #include <tf/transform_listener.h>
+#include <visualization_msgs/Marker.h>
 
 class PathFollower
 {
 private:
     ros::NodeHandle nh;
     ros::Subscriber path_sub;
-    ros::Publisher cmd_pub, twist_pub;
+    ros::Publisher cmd_pub, twist_pub, target_point_marker_pub;
     std::string map_frame, base_link_frame;
     std::string input_path_topic_name, output_cmd_topic_name;
     nav_msgs::Path path;
@@ -89,6 +90,7 @@ PathFollower::PathFollower():
     path_sub = nh.subscribe(input_path_topic_name, 1, &PathFollower::path_callback, this);
     // publisher
     cmd_pub = nh.advertise<geometry_msgs::TransformStamped>(output_cmd_topic_name, 10);
+    target_point_marker_pub = nh.advertise<visualization_msgs::Marker>("/path_following_target_point", 10);
     if (publish_twist)
         twist_pub = nh.advertise<geometry_msgs::Twist>("/bebop/cmd_vel", 10);
 }
@@ -156,8 +158,8 @@ void PathFollower::spin(void)
         }
         else
         {
-            i0 = prev_nearest_path_index - 30;
-            i1 = prev_nearest_path_index + 30;
+            i0 = prev_nearest_path_index - 3;
+            i1 = prev_nearest_path_index + 3;
             if (i0 < 1)
                 i0 = 1;
             if (i1 >= path.poses.size())
@@ -244,6 +246,7 @@ void PathFollower::spin(void)
                 vx = 0.0;
             double vy = pgy * ey + dgy * eyo;
             double vz = pgz * ez + dgz * ezo;
+            vz = 0.0;
             double wz = pgy * eyaw + dgy * eyawo;
             vx = check_velocity(vx, max_linear_vel);
             vy = check_velocity(vy, max_linear_vel);
@@ -270,6 +273,33 @@ void PathFollower::spin(void)
         cmd_pub.publish(cmd_vel);
         if (publish_twist)
             twist_pub.publish(twist_cmd);
+        // publish target point marger
+        if (target_path_index >= 0)
+        {
+            visualization_msgs::Marker marker;
+            marker.header.frame_id = map_frame;
+            marker.header.stamp = ros::Time::now();
+            marker.ns = "basic_shapes";
+            marker.id = 0;
+            marker.type = visualization_msgs::Marker::SPHERE;
+            marker.action = visualization_msgs::Marker::ADD;
+            marker.lifetime = ros::Duration();
+            marker.scale.x = 0.5 * translation_scale;
+            marker.scale.y = 0.5 * translation_scale;
+            marker.scale.z = 0.5 * translation_scale;
+            marker.pose.position.x = path.poses[target_path_index].pose.position.x;
+            marker.pose.position.y = path.poses[target_path_index].pose.position.y;
+            marker.pose.position.z = path.poses[target_path_index].pose.position.z;
+            marker.pose.orientation.x = 0.0;
+            marker.pose.orientation.y = 0.0;
+            marker.pose.orientation.z = 0.0;
+            marker.pose.orientation.w = 1.0;
+            marker.color.r = 0.0f;
+            marker.color.g = 1.0f;
+            marker.color.b = 0.0f;
+            marker.color.a = 1.0f;
+            target_point_marker_pub.publish(marker);
+        }
         // print debug message
         if (target_path_index >= 0)
         {
