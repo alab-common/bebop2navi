@@ -95,12 +95,12 @@ Eigen::Matrix<double, 6, 6> mat_generator::get_Jacobian_matrix_input(double delt
     return V;
 }
 
-Eigen::Matrix<double, 6, 6> mat_generator::get_input_error_matrix(Eigen::Matrix<double, 36, 1> noisePram, Eigen::Matrix<double, 6, 1> u){
+Eigen::Matrix<double, 6, 6> mat_generator::get_input_error_matrix(std::vector<double> noisePram, Eigen::Matrix<double, 6, 1> u){
     Eigen::Matrix<double, 6, 6> M = Eigen::Matrix<double, 6, 6>::Zero();
 
     for (int i = 0; i < 6; i++){
         for (int j = 0; j < 6; j++){
-            M(i,i) += noisePram(6 + i+j) * std::pow(u(j),2.0f);
+            M(i,i) += noisePram[6 + i+j] * std::pow(u(j),2.0f);
         }
     }
     return M;
