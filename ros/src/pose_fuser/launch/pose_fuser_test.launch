@@ -10,7 +10,7 @@
     <arg name="fused_frame" default="/fused_frame" />
     <arg name="fused_pose_hz" default="30.0" />
     <arg name="slam_lost_time" default="1.0" />
-    <arg name="scale_factor" default="0.3" />
+    <arg name="scale_factor" default="0.2" />
     <arg name="initial_cov_xx" default="0.1" />
     <arg name="initial_cov_yy" default="0.1" />
     <arg name="initial_cov_zz" default="0.1" />
@@ -23,16 +23,16 @@
     <rosparam >
         pose_fuser:
             noise_param: [
-                0.8, 0.8, 0.8, 1.0, 1.0, 1.0,
-                0.8, 0.8, 0.8, 1.0, 1.0, 1.0,
-                0.8, 0.8, 0.8, 1.0, 1.0, 1.0,
-                0.8, 0.8, 0.8, 1.0, 1.0, 1.0,
-                0.8, 0.8, 0.8, 1.0, 1.0, 1.0,
-                0.8, 0.8, 0.8, 1.0, 1.0, 1.0]
+                50.0, 10.0, 10.0, 10.0, 10.0, 10.0,
+                10.0, 50.0, 10.0, 10.0, 10.0, 10.0,
+                10.0, 10.0, 50.0, 10.0, 10.0, 10.0,
+                10.0, 10.0, 10.0, 50.0, 10.0, 10.0,
+                10.0, 10.0, 10.0, 10.0, 50.0, 10.0,
+                10.0, 10.0, 10.0, 10.0, 10.0, 50.0]
     </rosparam >
 
     <!-- pose fuser -->
-    <node name="pose_fuser" pkg="pose_fuser" type="pose_fuser" output="screen">
+    <node name="pose_fuser" pkg="pose_fuser" type="pose_fuser_test" output="screen">
         <param name="/odom_topic_name" value="$(arg odom_topic_name)" type="string" />
         <param name="/slam_topic_name" value="$(arg slam_topic_name)" type="string" />
         <param name="/cmd_vel_topic_name" value="$(arg cmd_vel_topic_name)" type="string" />

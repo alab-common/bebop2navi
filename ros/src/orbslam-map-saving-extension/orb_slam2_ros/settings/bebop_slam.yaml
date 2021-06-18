@@ -74,7 +74,7 @@ Viewer.ViewpointF: 500
 #Name of mapfile to be saved
 #No need to specify a path if the map is located in the folder devel/lib/orbs_slam2_ros
 #(same location as the executable Stereo/Mono/RGB file )
-Map.mapfile: nic6f.bin
+Map.mapfile: kkzt.bin
 #Set to 1 if you want to save a map, 0 if not
 Map.save_map: 1
 #Set to 1 if you want to load a saved map, 0 if not
