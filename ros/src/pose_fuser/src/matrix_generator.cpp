@@ -53,7 +53,7 @@ Eigen::Matrix<double, 6, 6> mat_generator::get_Jacobian_matrix_state(double delt
     double s_roll = std::sin(attitude(0));
     double s_pitch = std::sin(attitude(1));
     double s_yaw = std::sin(attitude(2));
-    double t_pitch = std::tan(attitude(2));
+    double t_pitch = std::tan(attitude(1));
 
     G <<
         1, 0, 0,
@@ -100,7 +100,8 @@ Eigen::Matrix<double, 6, 6> mat_generator::get_input_error_matrix(std::vector<do
 
     for (int i = 0; i < 6; i++){
         for (int j = 0; j < 6; j++){
-            M(i,i) += noisePram[6 + i+j] * std::pow(u(j),2.0f);
+//            M(i,i) += noisePram[6 + i+j] * std::pow(u(j),2.0f);
+            M(i,i) += noisePram[6 * i+j] * std::pow(u(j),2.0f);
         }
     }
     return M;
