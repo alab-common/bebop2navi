@@ -53,7 +53,7 @@ Eigen::Matrix<double, 6, 6> mat_generator::get_Jacobian_matrix_state(double delt
     double s_roll = std::sin(attitude(0));
     double s_pitch = std::sin(attitude(1));
     double s_yaw = std::sin(attitude(2));
-    double t_pitch = std::tan(attitude(2));
+    double t_pitch = std::tan(attitude(1));
 
     G <<
         1, 0, 0,
@@ -100,8 +100,44 @@ Eigen::Matrix<double, 6, 6> mat_generator::get_input_error_matrix(std::vector<do
 
     for (int i = 0; i < 6; i++){
         for (int j = 0; j < 6; j++){
-            M(i,i) += noisePram[6 + i+j] * std::pow(u(j),2.0f);
+            M(i,i) += noisePram[6 * i + j] * std::pow(u(j),2.0f);
         }
     }
     return M;
+}
+
+Eigen::Matrix<double, 3, 3> mat_generator::get_transform_matrix_RPY(Eigen::Matrix<double, 3, 1> attitude){
+    double c_roll = std::cos(attitude(0));
+    double c_pitch = std::cos(attitude(1));
+    double c_yaw = std::cos(attitude(2));
+    double s_roll = std::sin(attitude(0));
+    double s_pitch = std::sin(attitude(1));
+    double s_yaw = std::sin(attitude(2));
+
+    double f_roll_numerator = c_roll * s_pitch;
+    double f_roll_denominator = s_roll * s_pitch * s_yaw - c_roll * c_yaw;
+    double f_pitch = c_roll * s_pitch * s_yaw - s_roll * c_yaw;
+    double f_yaw_numerator = -c_roll * s_pitch * c_yaw - s_roll * s_yaw;
+    double f_yaw_denominator = c_roll * c_pitch;
+
+    double row0_denominator = std::pow(f_roll_numerator/f_roll_denominator, 2.0f) + 1.0f;
+    double row1_denominator = std::sqrt(1-std::pow(f_pitch,2.0f));
+    double row2_denominator = std::pow(f_yaw_numerator/f_yaw_denominator, 2.0f) + 1.0f;
+
+    Eigen::Matrix<double, 3, 3> H;
+
+    H <<
+        (-s_roll * s_yaw * f_roll_denominator - f_roll_numerator * (c_roll * s_pitch * s_yaw - s_roll * c_yaw)) / (std::pow(f_roll_denominator,2.0f) * row0_denominator),
+        c_roll * c_pitch * s_roll * std::pow(s_yaw,2.0f) / (std::pow(f_roll_denominator,2.0f) * row0_denominator),
+        (c_roll * c_yaw * f_roll_denominator - f_roll_numerator * (s_roll * s_pitch * c_yaw - c_roll + s_yaw)) / (std::pow(f_roll_denominator,2.0f) * row0_denominator),
+        
+        (-s_roll * s_pitch * s_yaw - c_roll * c_yaw) / row1_denominator,
+        (c_roll * c_pitch * s_yaw) / row1_denominator,
+        (c_roll * s_pitch * c_yaw + s_roll * s_pitch) / row1_denominator,
+        
+        (s_roll * c_pitch * f_yaw_numerator + f_yaw_denominator * (s_roll * s_pitch * c_yaw - c_roll * s_yaw))/(std::pow(f_yaw_denominator,2.0f) * row2_denominator),
+        (c_roll * s_pitch * f_yaw_numerator - f_yaw_denominator * c_roll * c_pitch * c_yaw) / (std::pow(f_yaw_denominator,2.0f) * row2_denominator),
+        (f_yaw_denominator * (-s_roll * c_yaw + c_roll * s_pitch * s_yaw)) / (std::pow(f_yaw_denominator,2.0f) * row2_denominator);
+
+    return H;
 }
