@@ -32,4 +32,3 @@ target_link_libraries(pose_fuser ${catkin_LIBRARIES})
 
 add_executable(pose_fuser_test src/pose_fuser_test.cpp src/matrix_generator.cpp)
 target_link_libraries(pose_fuser_test ${catkin_LIBRARIES})
-

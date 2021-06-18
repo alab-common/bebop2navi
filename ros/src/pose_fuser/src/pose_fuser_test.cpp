@@ -177,12 +177,14 @@ void PoseFuser::odomCB(const nav_msgs::Odometry::ConstPtr &msg){
     R = mat_generator::get_transformation_matrix_map_to_world(currAttitude);
     G = mat_generator::get_Jacobian_matrix_state(deltaTime, currAttitude, u);
     V = mat_generator::get_Jacobian_matrix_input(deltaTime, currAttitude);
-    M = mat_generator::get_input_error_matrix(noiseParam_, u);
+    //M = mat_generator::get_input_error_matrix(noiseParam_, u);
        
     // update odometry & covariance matrix
-    pose = pose + deltaTime * R * u;
-    covMat = G * covMat * G.transpose() + V * M * V.transpose();
-    modifyRPY(&pose(3), &pose(4), &pose(5));
+    pose += scaleFactor_ * deltaTime * R * u;
+    //covMat = G * covMat * G.transpose() + V * M * V.transpose();
+    modifyAngle(&pose(3));
+    modifyAngle(&pose(4));
+    modifyAngle(&pose(5));
     
     pose_ = pose;
     covMat_ = covMat;

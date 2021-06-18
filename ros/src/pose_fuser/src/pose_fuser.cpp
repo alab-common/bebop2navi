@@ -146,7 +146,7 @@ void PoseFuser::odomCB(const nav_msgs::Odometry::ConstPtr &msg){
 
     double currTime = msg->header.stamp.toSec();
     double deltaTime = currTime - prevTime;
-    Eigen::VectorXd u(6), omega(3), currAttitude(3), pose(6); 
+    Eigen::VectorXd u(6), omega(3), omegaRPY(3), currAttitude(3), pose(6); 
     Eigen::MatrixXd R(6,6), V(6,6), M(6,6), G(6,6), covMat(6,6);
 
     // get current pose & covariance matrix
@@ -162,7 +162,10 @@ void PoseFuser::odomCB(const nav_msgs::Odometry::ConstPtr &msg){
     tf::Matrix3x3 m(q);
     m.getRPY(currAttitude(0), currAttitude(1), currAttitude(2));
     // calculate angular velocity
-    omega = (currAttitude - prevAttitude) / deltaTime;
+    omegaRPY = (currAttitude - prevAttitude) / deltaTime;
+    omega(0) = omegaRPY(0) + std::sin(currAttitude(1)) * omegaRPY(2);
+    omega(1) = std::cos(currAttitude(0)) * omegaRPY(1) - std::sin(currAttitude(0)) * std::cos(currAttitude(1)) * omegaRPY(2);
+    omega(2) = std::sin(currAttitude(0)) * omegaRPY(1) + std::cos(currAttitude(0)) * std::cos(currAttitude(1)) * omegaRPY(2);
 
     // set veloity & angular velocity
     u <<
@@ -186,6 +189,7 @@ void PoseFuser::odomCB(const nav_msgs::Odometry::ConstPtr &msg){
     
     pose_ = pose;
     covMat_ = covMat;
+    
     prevTime = currTime;
     prevAttitude = currAttitude;
 }
@@ -210,7 +214,7 @@ void PoseFuser::cmdVelCB(const geometry_msgs::Twist::ConstPtr &msg){
 
 void PoseFuser::KalmanFilter(Eigen::VectorXd currPose, Eigen::Matrix<double, 6, 6> currCovMat, geometry_msgs::PoseWithCovarianceStamped slamMsg){
     static tf::Quaternion q_camera2Map;
-    static Eigen::MatrixXd transformMat = Eigen::MatrixXd::Zero(6,6);
+    static Eigen::Matrix3d transformPosition;
     static bool isFirst = true;
     
     if (isFirst){
@@ -235,20 +239,10 @@ void PoseFuser::KalmanFilter(Eigen::VectorXd currPose, Eigen::Matrix<double, 6, 
         double roll, pitch, yaw;
         m.getRPY(roll, pitch, yaw);
         // transformation matrix from camera world to map
-        Eigen::Matrix3d rot;
-        rot = Eigen::AngleAxisd(roll, Eigen::Vector3d::UnitX()).inverse()
-            * Eigen::AngleAxisd(pitch, Eigen::Vector3d::UnitY()).inverse()
-            * Eigen::AngleAxisd(yaw, Eigen::Vector3d::UnitZ()).inverse();
+        transformPosition = Eigen::AngleAxisd(roll, Eigen::Vector3d::UnitX()).inverse()
+                          * Eigen::AngleAxisd(pitch, Eigen::Vector3d::UnitY()).inverse()
+                          * Eigen::AngleAxisd(yaw, Eigen::Vector3d::UnitZ()).inverse();
         
-        for (int i = 0; i < 3; i++){
-            for (int j = 0; j < 3; j++){
-                transformMat(i,j) = rot(i,j);
-            }
-        }
-        transformMat(3,5) = 1;
-        transformMat(4,3) = -1;
-        transformMat(5,4) = -1;
-
         isFirst = false;
     }
     
@@ -261,6 +255,38 @@ void PoseFuser::KalmanFilter(Eigen::VectorXd currPose, Eigen::Matrix<double, 6, 
     Eigen::MatrixXd I = Eigen::MatrixXd::Identity(6,6);
     Eigen::VectorXd slamPose(6), fusedPose(6);
 
+    // transform position & attitude from camera world to map
+    Eigen::VectorXd position(3);
+    position(0) = slamMsg.pose.pose.position.x;
+    position(1) = slamMsg.pose.pose.position.y;
+    position(2) = slamMsg.pose.pose.position.z;
+    position = transformPosition * position;
+    slamPose(0) = position(0);
+    slamPose(1) = position(1);
+    slamPose(2) = position(2);
+    tf::Quaternion q(
+        slamMsg.pose.pose.orientation.x, 
+        slamMsg.pose.pose.orientation.y, 
+        slamMsg.pose.pose.orientation.z,
+        slamMsg.pose.pose.orientation.w);
+    tf::Matrix3x3 m(q);
+    Eigen::Vector3d slamAttitude;
+    m.getRPY(slamAttitude(0), slamAttitude(1), slamAttitude(2));
+
+    slamPose(3) = atan2(std::cos(slamAttitude(0))*std::sin(slamAttitude(2)), std::sin(slamAttitude(0))*std::sin(slamAttitude(1))*std::sin(slamAttitude(2))+std::cos(slamAttitude(0))*std::cos(slamAttitude(2)));
+    slamPose(4) = asin(std::cos(slamAttitude(0))*std::sin(slamAttitude(1))*std::sin(slamAttitude(2))-std::sin(slamAttitude(0))*std::cos(slamAttitude(2)));
+    slamPose(5) = atan2(-std::cos(slamAttitude(0))*std::sin(slamAttitude(1))*std::cos(slamAttitude(2))-std::sin(slamAttitude(0))*std::sin(slamAttitude(2)),std::cos(slamAttitude(0))*std::cos(slamAttitude(1)));
+    
+    // for debug
+    tf::Quaternion q2;
+    q2.setRPY(slamPose(3),slamPose(4),slamPose(5));
+    static tf::TransformBroadcaster br;
+    tf::Transform transform;
+    transform.setOrigin(tf::Vector3(slamPose(0), slamPose(1), slamPose(2)));
+    transform.setRotation(q2);
+    br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), mapFrame_, "/base_link3"));
+    // for debug
+
     // set matrices
     outputMat = I;
     // covariance matrix of pose from slam
@@ -268,22 +294,19 @@ void PoseFuser::KalmanFilter(Eigen::VectorXd currPose, Eigen::Matrix<double, 6, 
         for (int j = 0; j < 6; j++)
         slamCovMat(i, j) = slamMsg.pose.covariance[i * 6 + j];
     }
-    slamCovMat = 0.01 * I;
-    slamCovMat = transformMat * slamCovMat * transformMat.transpose();
+    slamCovMat = 0.3 * I;
 
-    // transform position & attitude from camera world to map
-    slamPose(0) = slamMsg.pose.pose.position.x;
-    slamPose(1) = slamMsg.pose.pose.position.y;
-    slamPose(2) = slamMsg.pose.pose.position.z;
-    tf::Quaternion q(
-        slamMsg.pose.pose.orientation.x, 
-        slamMsg.pose.pose.orientation.y, 
-        slamMsg.pose.pose.orientation.z,
-        slamMsg.pose.pose.orientation.w);
-    tf::Matrix3x3 m(q);
-    m.getRPY(slamPose(3), slamPose(4), slamPose(5));
-    // transform slamPose from camera_world to map
-    slamPose = transformMat * slamPose;
+    // transform covariance matrix from camera to map
+    Eigen::Matrix3d JacobiMatRPY = mat_generator::get_transform_matrix_RPY(slamAttitude);
+    Eigen::MatrixXd transformMat = Eigen::MatrixXd::Zero(6,6);
+    // transform matrix
+    for (int i = 0; i < 3; i++){
+        for (int j = 0; j < 3; j++){
+            transformMat(i,j) = transformPosition(i,j);
+            transformMat(3+i,3+j) = JacobiMatRPY(i,j);
+        }
+    }
+    slamCovMat = transformMat * slamCovMat * transformMat.transpose();
 
     // get Kalman Gain
     KalmanGain = currCovMat * outputMat.transpose() 
