@@ -193,6 +193,12 @@ class SparseBlockMatrix {
     bool writeOctave(const char* filename, bool upperTriangle = true) const;
 
     /**
+     * get the content of this matrix to a as a 2D vector
+     * @param upperTriangle does this matrix store only the upper triangular blocks
+     */
+    std::vector<std::vector<double>> getMatrix(bool upperTriangle = true) const;
+
+    /**
      * copy into CCS structure
      * @return number of processed blocks, -1 on error
      */

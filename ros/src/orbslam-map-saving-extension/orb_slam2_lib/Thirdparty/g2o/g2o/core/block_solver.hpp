@@ -58,7 +58,7 @@ BlockSolver<Traits>::BlockSolver(LinearSolverType* linearSolver) :
   _numLandmarks=0;
   _sizePoses=0;
   _sizeLandmarks=0;
-  _doSchur=true;
+  _doSchur=false;
 }
 
 template <typename Traits>
@@ -78,6 +78,7 @@ void BlockSolver<Traits>::resize(int* blockPoseIndices, int numPoseBlocks,
   }
 
   _Hpp=new PoseHessianType(blockPoseIndices, blockPoseIndices, numPoseBlocks, numPoseBlocks);
+  _Hschur=new PoseHessianType(blockPoseIndices, blockPoseIndices, numPoseBlocks, numPoseBlocks);
   if (_doSchur) {
     _Hschur=new PoseHessianType(blockPoseIndices, blockPoseIndices, numPoseBlocks, numPoseBlocks);
     _Hll=new LandmarkHessianType(blockLandmarkIndices, blockLandmarkIndices, numLandmarkBlocks, numLandmarkBlocks);

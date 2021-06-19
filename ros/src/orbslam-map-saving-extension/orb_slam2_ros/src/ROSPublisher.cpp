@@ -11,6 +11,8 @@
 #include <sstream>
 #include <cassert>
 
+
+
 #include <ros/ros.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <sensor_msgs/Image.h>
@@ -199,7 +201,8 @@ ROSPublisher::ROSPublisher(Map *map, double frequency, bool bReuseMap_, ros::Nod
     image_pub_ = nh_.advertise<sensor_msgs::Image>("frame", 5);
     state_pub_ = nh_.advertise<orb_slam2_ros::ORBState>("state", 10);
     state_desc_pub_ = nh_.advertise<std_msgs::String>("state_description", 10);
-    pose_pub_ = nh_.advertise<geometry_msgs::PoseWithCovarianceStamped>("pose", 10);
+    pose_pub_ = nh_.advertise<geometry_msgs::PoseWithCovarianceStamped>("pose_Hpp", 10);
+	pose_pub_1 = nh_.advertise<geometry_msgs::PoseWithCovarianceStamped>("pose_Slam_Hessian", 10);
 
 
     if (octomap_enabled_)
@@ -656,7 +659,7 @@ void ROSPublisher::publishCameraPose()
         camera_tf_pub_.sendTransform(transform);
         
         
-        if (pose_pub_.getNumSubscribers() > 0)
+        if (pose_pub_1.getNumSubscribers() > 0)
         {
             geometry_msgs::PoseWithCovarianceStamped msg;
             msg.header.stamp = ros::Time(camera_timestamp);
@@ -668,9 +671,45 @@ void ROSPublisher::publishCameraPose()
             msg.pose.pose.position.x = camera_position_.x();
             msg.pose.pose.position.y = camera_position_.y();
             msg.pose.pose.position.z = camera_position_.z();
-            msg.pose.covariance[6*0+0] = 0.5 * 0.5;
-            msg.pose.covariance[6*1+1] = 0.5 * 0.5;
-            msg.pose.covariance[6*5+5] = M_PI/12.0 * M_PI/12.0;
+            //msg.pose.covariance[6*0+0] = 0.5 * 0.5;
+			
+            //msg.pose.covariance[6*1+1] = 0.5 * 0.5;
+
+            //msg.pose.covariance[6*5+5] = M_PI/12.0 * M_PI/12.0;
+			boost::array<double, 36> SLAM_Hessian =  {4.55666e-07,	-1.33193e-08,	1.97759e-08,	1.18017e-08, 1.9164e-07, 1.07234e-09,	
+								   -1.33193e-08,	3.13216e-07,	-2.44762e-08,	-1.50203e-07,	-1.13234e-08,	-1.54416e-08,	
+									1.97759e-08,	-2.44762e-08,	1.55026e-07,	1.14961e-08,	2.07999e-08,	1.85749e-09,	
+									1.18017e-08,	-1.50203e-07,	1.14961e-08,	7.83862e-08,	7.65976e-09,	2.42989e-09,	
+									1.9164e-07,	-1.13234e-08,	2.07999e-08,	7.65976e-09,	8.68142e-08,	8.226e-10,	
+									1.07234e-09,	-1.54416e-08,	1.85749e-09,	2.42989e-09,	8.226e-10,	2.5574e-08};
+			msg.pose.covariance = SLAM_Hessian;
+            pose_pub_1.publish(msg);
+        }
+
+		if (pose_pub_.getNumSubscribers() > 0)
+        {
+            geometry_msgs::PoseWithCovarianceStamped msg;
+            msg.header.stamp = ros::Time(camera_timestamp);
+            msg.header.frame_id = "/camera_world";
+            msg.pose.pose.orientation.x = orientation.x();
+            msg.pose.pose.orientation.y = orientation.y();
+            msg.pose.pose.orientation.z = orientation.z();
+            msg.pose.pose.orientation.w = orientation.w();
+            msg.pose.pose.position.x = camera_position_.x();
+            msg.pose.pose.position.y = camera_position_.y();
+            msg.pose.pose.position.z = camera_position_.z();
+            //msg.pose.covariance[6*0+0] = 0.5 * 0.5;
+			
+            //msg.pose.covariance[6*1+1] = 0.5 * 0.5;
+
+            //msg.pose.covariance[6*5+5] = M_PI/12.0 * M_PI/12.0;
+			boost::array<double, 36> Hpp =  {2.33085e-07,	4.3292e-09,	1.30772e-09, 1.30099e-09,	8.30652e-08,	-4.39103e-09,	
+										4.3292e-09,	1.65227e-07,	-1.02107e-08,	-6.62715e-08,	-6.54037e-10,	-1.27698e-08,	
+										1.30772e-09,	-1.02107e-08,	1.39664e-07,	3.81852e-09,	9.61689e-09,	7.90506e-10,	
+										1.30099e-09,	-6.62715e-08,	3.81852e-09,	3.09111e-08,	1.35539e-09,	1.77344e-09,	
+										8.30652e-08,	-6.54037e-10,	9.61689e-09,	1.35539e-09,	3.38296e-08,	-1.55854e-09,	
+										-4.39103e-09,	-1.27698e-08,	7.90506e-10,	1.77344e-09,	-1.55854e-09,	1.96355e-08	};
+			msg.pose.covariance = Hpp;
             pose_pub_.publish(msg);
         }
 
