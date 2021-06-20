@@ -75,6 +75,7 @@ namespace g2o {
     typedef SparseBlockMatrix<LandmarkMatrixType> LandmarkHessianType;
     typedef SparseBlockMatrix<PoseLandmarkMatrixType> PoseLandmarkHessianType;
     typedef LinearSolver<PoseMatrixType> LinearSolverType;
+
   };
 
   /**
@@ -140,6 +141,11 @@ namespace g2o {
       virtual bool saveHessian(const std::string& fileName) const;
 
       virtual void multiplyHessian(double* dest, const double* src) const { _Hpp->multiplySymmetricUpperTriangle(dest, src);}
+
+      SparseBlockMatrix<PoseMatrixType>* getPoseHessian(void) { return _Hpp; }
+	  SparseBlockMatrix<PoseLandmarkMatrixType>* getPoseHessian_pl(void) { return _Hpl; }
+	  SparseBlockMatrix<LandmarkMatrixType>* getPoseHessian_ll(void) { return _Hll; }
+		
 
     protected:
       void resize(int* blockPoseIndices, int numPoseBlocks, 

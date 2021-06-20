@@ -83,7 +83,7 @@ private:
     // Important: `nh_` goes before the `*_pub_`, because their construction relies on `nh_`!
     ros::NodeHandle nh_;
     std::string map_frame_name_, camera_frame_name_;
-    ros::Publisher map_pub_, map_updates_pub_, image_pub_, odom_pub_, pose_pub_, state_pub_, state_desc_pub_, octomap_pub_, projected_map_pub_, gradient_map_pub_;
+    ros::Publisher map_pub_, map_updates_pub_, image_pub_, odom_pub_, pose_pub_, pose_pub_1, state_pub_, state_desc_pub_, octomap_pub_, projected_map_pub_, gradient_map_pub_;
     tf::TransformBroadcaster camera_tf_pub_;
     ros::Rate pub_rate_;
 

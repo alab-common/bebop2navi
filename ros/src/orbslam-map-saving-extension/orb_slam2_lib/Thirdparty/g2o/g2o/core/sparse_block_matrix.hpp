@@ -589,6 +589,39 @@ namespace g2o {
   }
 
   template <class MatrixType>
+  std::vector<std::vector<double>> SparseBlockMatrix<MatrixType>::getMatrix(bool upperTriangle) const
+  {
+    std::vector<TripletEntry> entries;
+    for (size_t i = 0; i<_blockCols.size(); ++i){
+      const int& c = i;
+      for (typename SparseBlockMatrix<MatrixType>::IntBlockMap::const_iterator it=_blockCols[i].begin(); it!=_blockCols[i].end(); ++it) {
+        const int& r = it->first;
+        const MatrixType& m = *(it->second);
+        for (int cc = 0; cc < m.cols(); ++cc)
+          for (int rr = 0; rr < m.rows(); ++rr) {
+            int aux_r = rowBaseOfBlock(r) + rr;
+            int aux_c = colBaseOfBlock(c) + cc;
+            entries.push_back(TripletEntry(aux_r, aux_c, m(rr, cc)));
+            if (upperTriangle && r != c) {
+              entries.push_back(TripletEntry(aux_c, aux_r, m(rr, cc)));
+            }
+          }
+      }
+    }
+
+    std::vector<std::vector<double>> matrix(rows());
+    for (int i = 0; i < rows(); ++i)
+      matrix[i].resize(cols());
+
+    std::sort(entries.begin(), entries.end(), TripletColSort());
+    for (std::vector<TripletEntry>::const_iterator it = entries.begin(); it != entries.end(); ++it) {
+      const TripletEntry& entry = *it;
+      matrix[entry.r][entry.c] = entry.x;
+    }
+    return matrix;
+  }
+
+  template <class MatrixType>
   int SparseBlockMatrix<MatrixType>::fillSparseBlockMatrixCCS(SparseBlockMatrixCCS<MatrixType>& blockCCS) const
   {
     blockCCS.blockCols().resize(blockCols().size());

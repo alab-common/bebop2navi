@@ -29,10 +29,124 @@
 #include "Thirdparty/g2o/g2o/types/types_seven_dof_expmap.h"
 
 #include<Eigen/StdVector>
+#include <cmath>
+#include <Eigen/Dense>
 
 #include "Converter.h"
 
 #include<mutex>
+
+
+#include<bits/stdc++.h>
+using namespace std;
+
+vector<vector<double>> matrixInversion(vector<vector<double>> &a)  
+{  
+    int n = a.size();
+   	 
+    vector<vector<double>> vec(n);
+    for(int i=0;i<n;i++)
+        vec[i].resize(n);
+    int *is = new int[n];  
+    int *js = new int[n];  
+    int i,j,k;  
+    double d,p;  
+    for ( k = 0; k < n; k++)  
+    {  
+        d = 0.0;  
+        for (i=k; i<=n-1; i++) 
+		{  
+            for (j=k; j<=n-1; j++)  
+            {  
+                p=fabs(a[i][j]);  
+                if (p>d)
+                        { d=p; is[k]=i; js[k]=j;}  
+            }  
+            if ( 0.0 == d )  
+            {  
+                free(is); free(js);
+				vector<vector<double>> res = a; 
+                return res;  
+            }  
+            if (is[k]!=k)
+			{  
+                for (j=0; j<=n-1; j++)  
+                {  
+                    p=a[k][j];  
+                    a[k][j]=a[is[k]][j];  
+                    a[is[k]][j]=p;  
+                }
+			}
+  
+            if (js[k]!=k)  
+                for (i=0; i<=n-1; i++)  
+                {  
+                    p=a[i][k];  
+                    a[i][k]=a[i][js[k]];  
+                    a[i][js[k]]=p;  
+                }  
+            a[k][k] = 1.0/a[k][k];  
+            for (j=0; j<=n-1; j++)
+			{  
+                if (j!=k)  
+                {  
+                    a[k][j] *= a[k][k];  
+                }
+			}  
+            for (i=0; i<=n-1; i++)
+			{  
+                if (i!=k)  
+                    for (j=0; j<=n-1; j++)  
+                        if (j!=k)  
+                        {  
+                            a[i][j] -= a[i][k]*a[k][j];  
+                        }
+			}  
+            for (i=0; i<=n-1; i++)
+			{  
+                if (i!=k)  
+                {  
+                    a[i][k] = -a[i][k]*a[k][k];  
+                }
+			}
+		}  
+    }  
+    for ( k = n-1; k >= 0; k--)  
+    {  
+        if (js[k]!=k)
+		{  
+            for (j=0; j<=n-1; j++)  
+            {  
+                p = a[k][j];  
+                a[k][j] = a[js[k]][j];  
+                a[js[k]][j]=p;  
+            }  
+            if (is[k]!=k)  
+                for (i=0; i<=n-1; i++)  
+                {   
+                    p = a[i][k];  
+                    a[i][k]=a[i][is[k]];  
+                    a[i][is[k]] = p;  
+                }
+		}  
+    }  
+    free(is); free(js); 
+    vector<vector<double>> res = a; 
+    return res;  
+}  
+
+void print(vector< vector<double> > A) {
+    int n = A.size();
+    for (int i=0; i<n; i++) {
+        for (int j=0; j<n; j++) {
+            cout << A[i][j] << "\t";
+            
+        }
+        cout << "\n";
+    }
+    cout << endl;
+}
+
 
 namespace ORB_SLAM2
 {
@@ -241,6 +355,7 @@ int Optimizer::PoseOptimization(Frame *pFrame)
     g2o::SparseOptimizer optimizer;
     g2o::BlockSolver_6_3::LinearSolverType * linearSolver;
 
+
     linearSolver = new g2o::LinearSolverDense<g2o::BlockSolver_6_3::PoseMatrixType>();
 
     g2o::BlockSolver_6_3 * solver_ptr = new g2o::BlockSolver_6_3(linearSolver);
@@ -446,6 +561,35 @@ int Optimizer::PoseOptimization(Frame *pFrame)
     g2o::SE3Quat SE3quat_recov = vSE3_recov->estimate();
     cv::Mat pose = Converter::toCvMat(SE3quat_recov);
     pFrame->SetPose(pose);
+
+
+
+
+	
+
+    // get the pose hessian matrix
+    g2o::SparseBlockMatrix<g2o::BlockSolver_6_3::PoseMatrixType>* Hpp = solver_ptr->getPoseHessian();
+    std::vector<std::vector<double>> poseHessianMatrix = Hpp[0].getMatrix();
+	std::vector<std::vector<double>> pose_M = Hpp[0].getMatrix();
+	
+    for (int i = 0; i < (int)poseHessianMatrix.size(); ++i) {
+        for (int j = 0; j < (int)poseHessianMatrix[i].size(); ++j)
+            printf("i = %d, j = %d, val = %lf\n", i, j, poseHessianMatrix[i][j]);
+			
+    }
+
+	cout << "Result:" << endl;
+    print(matrixInversion(pose_M));
+	//for (int i = 0; i < (int)matrixInversion(pose_M).size(); ++i) {
+    //    for (int j = 0; j < (int)matrixInversion(pose_M).size(); ++j)
+    //        printf("i = %d, j = %d, val = %lf\n", i, j, matrixInversion(pose_M)[i][j]);
+			
+    //}
+	
+	
+
+	
+
 
     return nInitialCorrespondences-nBad;
 }
