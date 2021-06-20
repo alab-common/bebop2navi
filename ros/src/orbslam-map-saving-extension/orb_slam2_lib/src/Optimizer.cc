@@ -40,101 +40,6 @@
 #include<bits/stdc++.h>
 using namespace std;
 
-vector<vector<double>> matrixInversion(vector<vector<double>> &a)  
-{  
-    int n = a.size();
-   	 
-    vector<vector<double>> vec(n);
-    for(int i=0;i<n;i++)
-        vec[i].resize(n);
-    int *is = new int[n];  
-    int *js = new int[n];  
-    int i,j,k;  
-    double d,p;  
-    for ( k = 0; k < n; k++)  
-    {  
-        d = 0.0;  
-        for (i=k; i<=n-1; i++) 
-		{  
-            for (j=k; j<=n-1; j++)  
-            {  
-                p=fabs(a[i][j]);  
-                if (p>d)
-                        { d=p; is[k]=i; js[k]=j;}  
-            }  
-            if ( 0.0 == d )  
-            {  
-                free(is); free(js);
-				vector<vector<double>> res = a; 
-                return res;  
-            }  
-            if (is[k]!=k)
-			{  
-                for (j=0; j<=n-1; j++)  
-                {  
-                    p=a[k][j];  
-                    a[k][j]=a[is[k]][j];  
-                    a[is[k]][j]=p;  
-                }
-			}
-  
-            if (js[k]!=k)  
-                for (i=0; i<=n-1; i++)  
-                {  
-                    p=a[i][k];  
-                    a[i][k]=a[i][js[k]];  
-                    a[i][js[k]]=p;  
-                }  
-            a[k][k] = 1.0/a[k][k];  
-            for (j=0; j<=n-1; j++)
-			{  
-                if (j!=k)  
-                {  
-                    a[k][j] *= a[k][k];  
-                }
-			}  
-            for (i=0; i<=n-1; i++)
-			{  
-                if (i!=k)  
-                    for (j=0; j<=n-1; j++)  
-                        if (j!=k)  
-                        {  
-                            a[i][j] -= a[i][k]*a[k][j];  
-                        }
-			}  
-            for (i=0; i<=n-1; i++)
-			{  
-                if (i!=k)  
-                {  
-                    a[i][k] = -a[i][k]*a[k][k];  
-                }
-			}
-		}  
-    }  
-    for ( k = n-1; k >= 0; k--)  
-    {  
-        if (js[k]!=k)
-		{  
-            for (j=0; j<=n-1; j++)  
-            {  
-                p = a[k][j];  
-                a[k][j] = a[js[k]][j];  
-                a[js[k]][j]=p;  
-            }  
-            if (is[k]!=k)  
-                for (i=0; i<=n-1; i++)  
-                {   
-                    p = a[i][k];  
-                    a[i][k]=a[i][is[k]];  
-                    a[i][is[k]] = p;  
-                }
-		}  
-    }  
-    free(is); free(js); 
-    vector<vector<double>> res = a; 
-    return res;  
-}  
-
 void print(vector< vector<double> > A) {
     int n = A.size();
     for (int i=0; i<n; i++) {
@@ -562,34 +467,226 @@ int Optimizer::PoseOptimization(Frame *pFrame)
     cv::Mat pose = Converter::toCvMat(SE3quat_recov);
     pFrame->SetPose(pose);
 
+    return nInitialCorrespondences-nBad;
+}
+
+int Optimizer::PoseOptimization(Frame *pFrame, std::vector<std::vector<double>> *poseHessian)
+{
+    g2o::SparseOptimizer optimizer;
+    g2o::BlockSolver_6_3::LinearSolverType * linearSolver;
 
 
+    linearSolver = new g2o::LinearSolverDense<g2o::BlockSolver_6_3::PoseMatrixType>();
 
-	
+    g2o::BlockSolver_6_3 * solver_ptr = new g2o::BlockSolver_6_3(linearSolver);
+    // solver_ptr->setSchur(false);
+
+    g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(solver_ptr);
+    optimizer.setAlgorithm(solver);
+
+    int nInitialCorrespondences=0;
+
+    // Set Frame vertex
+    g2o::VertexSE3Expmap * vSE3 = new g2o::VertexSE3Expmap();
+    vSE3->setEstimate(Converter::toSE3Quat(pFrame->mTcw));
+    vSE3->setId(0);
+    vSE3->setFixed(false);
+    optimizer.addVertex(vSE3);
+
+    // Set MapPoint vertices
+    const int N = pFrame->N;
+
+    vector<g2o::EdgeSE3ProjectXYZOnlyPose*> vpEdgesMono;
+    vector<size_t> vnIndexEdgeMono;
+    vpEdgesMono.reserve(N);
+    vnIndexEdgeMono.reserve(N);
+
+    vector<g2o::EdgeStereoSE3ProjectXYZOnlyPose*> vpEdgesStereo;
+    vector<size_t> vnIndexEdgeStereo;
+    vpEdgesStereo.reserve(N);
+    vnIndexEdgeStereo.reserve(N);
+
+    const float deltaMono = sqrt(5.991);
+    const float deltaStereo = sqrt(7.815);
+
+
+    {
+    unique_lock<mutex> lock(MapPoint::mGlobalMutex);
+
+    for(int i=0; i<N; i++)
+    {
+        MapPoint* pMP = pFrame->mvpMapPoints[i];
+        if(pMP)
+        {
+            // Monocular observation
+            if(pFrame->mvuRight[i]<0)
+            {
+                nInitialCorrespondences++;
+                pFrame->mvbOutlier[i] = false;
+
+                Eigen::Matrix<double,2,1> obs;
+                const cv::KeyPoint &kpUn = pFrame->mvKeysUn[i];
+                obs << kpUn.pt.x, kpUn.pt.y;
+
+                g2o::EdgeSE3ProjectXYZOnlyPose* e = new g2o::EdgeSE3ProjectXYZOnlyPose();
+
+                e->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(0)));
+                e->setMeasurement(obs);
+                const float invSigma2 = pFrame->mvInvLevelSigma2[kpUn.octave];
+                e->setInformation(Eigen::Matrix2d::Identity()*invSigma2);
+
+                g2o::RobustKernelHuber* rk = new g2o::RobustKernelHuber;
+                e->setRobustKernel(rk);
+                rk->setDelta(deltaMono);
+
+                e->fx = pFrame->fx;
+                e->fy = pFrame->fy;
+                e->cx = pFrame->cx;
+                e->cy = pFrame->cy;
+                cv::Mat Xw = pMP->GetWorldPos();
+                e->Xw[0] = Xw.at<float>(0);
+                e->Xw[1] = Xw.at<float>(1);
+                e->Xw[2] = Xw.at<float>(2);
+
+                optimizer.addEdge(e);
+
+                vpEdgesMono.push_back(e);
+                vnIndexEdgeMono.push_back(i);
+            }
+            else  // Stereo observation
+            {
+                nInitialCorrespondences++;
+                pFrame->mvbOutlier[i] = false;
+
+                //SET EDGE
+                Eigen::Matrix<double,3,1> obs;
+                const cv::KeyPoint &kpUn = pFrame->mvKeysUn[i];
+                const float &kp_ur = pFrame->mvuRight[i];
+                obs << kpUn.pt.x, kpUn.pt.y, kp_ur;
+
+                g2o::EdgeStereoSE3ProjectXYZOnlyPose* e = new g2o::EdgeStereoSE3ProjectXYZOnlyPose();
+
+                e->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(0)));
+                e->setMeasurement(obs);
+                const float invSigma2 = pFrame->mvInvLevelSigma2[kpUn.octave];
+                Eigen::Matrix3d Info = Eigen::Matrix3d::Identity()*invSigma2;
+                e->setInformation(Info);
+
+                g2o::RobustKernelHuber* rk = new g2o::RobustKernelHuber;
+                e->setRobustKernel(rk);
+                rk->setDelta(deltaStereo);
+
+                e->fx = pFrame->fx;
+                e->fy = pFrame->fy;
+                e->cx = pFrame->cx;
+                e->cy = pFrame->cy;
+                e->bf = pFrame->mbf;
+                cv::Mat Xw = pMP->GetWorldPos();
+                e->Xw[0] = Xw.at<float>(0);
+                e->Xw[1] = Xw.at<float>(1);
+                e->Xw[2] = Xw.at<float>(2);
+
+                optimizer.addEdge(e);
+
+                vpEdgesStereo.push_back(e);
+                vnIndexEdgeStereo.push_back(i);
+            }
+        }
+
+    }
+    }
+
+
+    if(nInitialCorrespondences<3)
+        return 0;
+
+    // We perform 4 optimizations, after each optimization we classify observation as inlier/outlier
+    // At the next optimization, outliers are not included, but at the end they can be classified as inliers again.
+    const float chi2Mono[4]={5.991,5.991,5.991,5.991};
+    const float chi2Stereo[4]={7.815,7.815,7.815, 7.815};
+    const int its[4]={10,10,10,10};    
+
+    int nBad=0;
+    for(size_t it=0; it<4; it++)
+    {
+
+        vSE3->setEstimate(Converter::toSE3Quat(pFrame->mTcw));
+        optimizer.initializeOptimization(0);
+        optimizer.optimize(its[it]);
+
+        nBad=0;
+        for(size_t i=0, iend=vpEdgesMono.size(); i<iend; i++)
+        {
+            g2o::EdgeSE3ProjectXYZOnlyPose* e = vpEdgesMono[i];
+
+            const size_t idx = vnIndexEdgeMono[i];
+
+            if(pFrame->mvbOutlier[idx])
+            {
+                e->computeError();
+            }
+
+            const float chi2 = e->chi2();
+
+            if(chi2>chi2Mono[it])
+            {                
+                pFrame->mvbOutlier[idx]=true;
+                e->setLevel(1);
+                nBad++;
+            }
+            else
+            {
+                pFrame->mvbOutlier[idx]=false;
+                e->setLevel(0);
+            }
+
+            if(it==2)
+                e->setRobustKernel(0);
+        }
+
+        for(size_t i=0, iend=vpEdgesStereo.size(); i<iend; i++)
+        {
+            g2o::EdgeStereoSE3ProjectXYZOnlyPose* e = vpEdgesStereo[i];
+
+            const size_t idx = vnIndexEdgeStereo[i];
+
+            if(pFrame->mvbOutlier[idx])
+            {
+                e->computeError();
+            }
+
+            const float chi2 = e->chi2();
+
+            if(chi2>chi2Stereo[it])
+            {
+                pFrame->mvbOutlier[idx]=true;
+                e->setLevel(1);
+                nBad++;
+            }
+            else
+            {                
+                e->setLevel(0);
+                pFrame->mvbOutlier[idx]=false;
+            }
+
+            if(it==2)
+                e->setRobustKernel(0);
+        }
+
+        if(optimizer.edges().size()<10)
+            break;
+    }    
+
+    // Recover optimized pose and return number of inliers
+    g2o::VertexSE3Expmap* vSE3_recov = static_cast<g2o::VertexSE3Expmap*>(optimizer.vertex(0));
+    g2o::SE3Quat SE3quat_recov = vSE3_recov->estimate();
+    cv::Mat pose = Converter::toCvMat(SE3quat_recov);
+    pFrame->SetPose(pose);
 
     // get the pose hessian matrix
     g2o::SparseBlockMatrix<g2o::BlockSolver_6_3::PoseMatrixType>* Hpp = solver_ptr->getPoseHessian();
-    std::vector<std::vector<double>> poseHessianMatrix = Hpp[0].getMatrix();
-	std::vector<std::vector<double>> pose_M = Hpp[0].getMatrix();
-	
-    for (int i = 0; i < (int)poseHessianMatrix.size(); ++i) {
-        for (int j = 0; j < (int)poseHessianMatrix[i].size(); ++j)
-            printf("i = %d, j = %d, val = %lf\n", i, j, poseHessianMatrix[i][j]);
-			
-    }
-
-	cout << "Result:" << endl;
-    print(matrixInversion(pose_M));
-	//for (int i = 0; i < (int)matrixInversion(pose_M).size(); ++i) {
-    //    for (int j = 0; j < (int)matrixInversion(pose_M).size(); ++j)
-    //        printf("i = %d, j = %d, val = %lf\n", i, j, matrixInversion(pose_M)[i][j]);
-			
-    //}
-	
-	
-
-	
-
+    *poseHessian = Hpp[0].getMatrix();
+    // std::cout<<Hpp[0]<<std::endl;
 
     return nInitialCorrespondences-nBad;
 }

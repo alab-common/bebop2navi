@@ -8,27 +8,27 @@
     <arg name="map_frame" default="/map" />
     <arg name="camera_frame" default="/camera_world" />
     <arg name="fused_frame" default="/fused_frame" />
-    <arg name="fused_pose_hz" default="50.0" />
-    <arg name="slam_lost_time" default="0.5" />
-    <arg name="scale_factor" default="0.1" />
-    <arg name="initial_cov_xx" default="4.0" />
-    <arg name="initial_cov_yy" default="4.0" />
-    <arg name="initial_cov_zz" default="4.0" />
-    <arg name="initial_cov_rollroll" default="4.0" />
-    <arg name="initial_cov_pitchpitch" default="4.0" />
-    <arg name="initial_cov_yawyaw" default="4.0" />
+    <arg name="fused_pose_hz" default="20.0" />
+    <arg name="slam_lost_time" default="1.0" />
+    <arg name="scale_factor" default="0.2" />
+    <arg name="initial_cov_xx" default="0.1" />
+    <arg name="initial_cov_yy" default="0.1" />
+    <arg name="initial_cov_zz" default="0.1" />
+    <arg name="initial_cov_rollroll" default="0.1" />
+    <arg name="initial_cov_pitchpitch" default="0.1" />
+    <arg name="initial_cov_yawyaw" default="0.1" />
     <arg name="initial_cov" default="1e-6" />
 
     <!-- rosparam -->
     <rosparam >
         pose_fuser:
             noise_param: [
-                0.8, 0.8, 0.8, 1.0, 1.0, 1.0,
-                0.8, 0.8, 0.8, 1.0, 1.0, 1.0,
-                0.8, 0.8, 0.8, 1.0, 1.0, 1.0,
-                0.8, 0.8, 0.8, 1.0, 1.0, 1.0,
-                0.8, 0.8, 0.8, 1.0, 1.0, 1.0,
-                0.8, 0.8, 0.8, 1.0, 1.0, 1.0]
+                100.0, 10.0,   10.0,  10.0,  10.0,  10.0,
+                10.0,  100.0,  10.0,  10.0,  10.0,  10.0,
+                10.0,  10.0,  100.0,  10.0,  10.0,  10.0,
+                10.0,  10.0,   10.0,  100.0, 10.0,  10.0,
+                10.0,  10.0,   10.0,  10.0, 100.0,  10.0,
+                10.0,  10.0,   10.0,  10.0,  10.0, 100.0]
     </rosparam >
 
     <!-- pose fuser -->

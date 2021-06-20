@@ -59,6 +59,7 @@ public:
     static constexpr const float OCTOMAP_RATE = 1;                // rate of octomap cycles (integrate MapPoints and publish)
     static constexpr const bool  OCTOMAP_REBUILD = false;         // clear octomap when tracking is lost and rebuild
 
+
     // `frequency` is max amount of messages emitted per second
     explicit ROSPublisher(
         ORB_SLAM2::Map *map,
@@ -83,7 +84,7 @@ private:
     // Important: `nh_` goes before the `*_pub_`, because their construction relies on `nh_`!
     ros::NodeHandle nh_;
     std::string map_frame_name_, camera_frame_name_;
-    ros::Publisher map_pub_, map_updates_pub_, image_pub_, odom_pub_, pose_pub_, pose_pub_1, state_pub_, state_desc_pub_, octomap_pub_, projected_map_pub_, gradient_map_pub_;
+    ros::Publisher map_pub_, map_updates_pub_, image_pub_, odom_pub_, pose_pub_, state_pub_, state_desc_pub_, octomap_pub_, projected_map_pub_, gradient_map_pub_;
     tf::TransformBroadcaster camera_tf_pub_;
     ros::Rate pub_rate_;
 
@@ -114,12 +115,14 @@ private:
     float gradient_low_slope_;
     float gradient_high_slope_;
 
-    tf::TransformListener tf_listener_;
+    double pose_covariance_scale_factor_;
+    bool use_static_covariance_matrix_;
+    double static_covariance_matrix_value_;
 
+    tf::TransformListener tf_listener_;
 
     void stashMapPoints(bool all_map_points = false);
     void octomapWorker();
-
 
     void updateOctoMap();
     void integrateMapPoints(const std::vector<ORB_SLAM2::MapPoint*> &, const octomap::point3d &, const octomap::pose6d &, octomap::OcTree &);

@@ -9,7 +9,6 @@ Panels:
         - /TF1
         - /TF1/Frames1
         - /TF1/Tree1
-        - /Fused pose1
       Splitter Ratio: 0.5
     Tree Height: 174
   - Class: rviz/Selection
@@ -30,7 +29,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: ""
+    SyncSource: ORB SLAM tracking image
 Preferences:
   PromptSaveOnExit: true
 Toolbars:
@@ -43,13 +42,48 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: false
+        base_link:
+          Value: false
+        base_link2:
+          Value: true
+        base_link3:
+          Value: true
+        camera_base_link:
+          Value: false
+        camera_optical:
+          Value: false
+        camera_pan_link:
+          Value: false
+        camera_tilt_link:
+          Value: false
+        camera_world:
+          Value: true
+        fused_frame:
+          Value: true
+        map:
+          Value: true
+        odom:
+          Value: false
+        orb_slam2/frame:
+          Value: true
+        orb_slam2/map_frame:
+          Value: true
       Marker Scale: 0.20000000298023224
       Name: TF
       Show Arrows: false
       Show Axes: true
       Show Names: true
       Tree:
-        {}
+        camera_world:
+          orb_slam2/frame:
+            orb_slam2/map_frame:
+              {}
+        map:
+          base_link3:
+            {}
+          fused_frame:
+            base_link2:
+              {}
       Update Interval: 0
       Value: true
     - Alpha: 0.5
@@ -238,6 +272,36 @@ Visualization Manager:
       Topic: /fused_pose
       Unreliable: false
       Value: true
+    - Alpha: 1
+      Axes Length: 1
+      Axes Radius: 0.10000000149011612
+      Class: rviz/PoseWithCovariance
+      Color: 255; 25; 0
+      Covariance:
+        Orientation:
+          Alpha: 0.5
+          Color: 255; 255; 127
+          Color Style: Unique
+          Frame: Local
+          Offset: 1
+          Scale: 1
+          Value: true
+        Position:
+          Alpha: 0.30000001192092896
+          Color: 204; 51; 204
+          Scale: 1
+          Value: true
+        Value: true
+      Enabled: true
+      Head Length: 0.029999999329447746
+      Head Radius: 0.05000000074505806
+      Name: ORB pose with covariance
+      Shaft Length: 0.009999999776482582
+      Shaft Radius: 0.009999999776482582
+      Shape: Arrow
+      Topic: /orb_slam2/pose
+      Unreliable: false
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -266,7 +330,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 1.01048743724823
+      Distance: 0.869270384311676
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -281,10 +345,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.37479886412620544
+      Pitch: 0.6347991228103638
       Target Frame: base_link2
       Value: Orbit (rviz)
-      Yaw: 3.055433750152588
+      Yaw: 3.0754384994506836
     Saved: ~
 Window Geometry:
   Bebop image raw:
@@ -306,5 +370,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1371
-  X: 214
-  Y: 140
+  X: 204
+  Y: 171

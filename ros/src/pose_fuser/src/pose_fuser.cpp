@@ -247,7 +247,7 @@ void PoseFuser::KalmanFilter(Eigen::VectorXd currPose, Eigen::Matrix<double, 6, 
     }
     
     // when trace of covariance matix is small, exit Kalman filter
-    if (currCovMat.trace() < 0.01f){
+    if (currCovMat.trace() < 0.0001f){
         return;
     }
 
@@ -294,7 +294,7 @@ void PoseFuser::KalmanFilter(Eigen::VectorXd currPose, Eigen::Matrix<double, 6, 
         for (int j = 0; j < 6; j++)
         slamCovMat(i, j) = slamMsg.pose.covariance[i * 6 + j];
     }
-    slamCovMat = 0.3 * I;
+    // slamCovMat = 0.1 * I;
 
     // transform covariance matrix from camera to map
     Eigen::Matrix3d JacobiMatRPY = mat_generator::get_transform_matrix_RPY(slamAttitude);

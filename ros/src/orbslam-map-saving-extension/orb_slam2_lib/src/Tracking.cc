@@ -444,9 +444,11 @@ void Tracking::Track()
             else
                 mVelocity = cv::Mat();
 
-	          if (mpMapPublisher)
+	          if (mpMapPublisher) {
 		            //mpMapPublisher->SetCurrentCameraPose(mCurrentFrame.mTcw);
 		             mpMapPublisher->SetCurrentCameraPose(mCurrentFrame.mTcw, mCurrentFrame.mTimeStamp);
+		             mpMapPublisher->SetCurrentCameraPoseHessian(mPoseHessian);
+	          }
 
 
             // Clean VO matches
@@ -571,10 +573,11 @@ void Tracking::StereoInitialization()
 
         mpMap->mvpKeyFrameOrigins.push_back(pKFini);
 
-        if (mpMapPublisher)
-	    //mpMapPublisher->SetCurrentCameraPose(mCurrentFrame.mTcw);
-	     mpMapPublisher->SetCurrentCameraPose(mCurrentFrame.mTcw, mCurrentFrame.mTimeStamp);
-
+        if (mpMapPublisher) {
+	        // mpMapPublisher->SetCurrentCameraPose(mCurrentFrame.mTcw);
+	        mpMapPublisher->SetCurrentCameraPose(mCurrentFrame.mTcw, mCurrentFrame.mTimeStamp);
+		     mpMapPublisher->SetCurrentCameraPoseHessian(mPoseHessian);
+        }
 
         mState=OK;
     }
@@ -751,9 +754,11 @@ void Tracking::CreateInitialMapMonocular()
 
     mpMap->SetReferenceMapPoints(mvpLocalMapPoints);
 
-    if (mpMapPublisher)
-	//mpMapPublisher->SetCurrentCameraPose(pKFcur->GetPose());
-	 mpMapPublisher->SetCurrentCameraPose(mCurrentFrame.mTcw, mCurrentFrame.mTimeStamp);
+    if (mpMapPublisher) {
+	    //mpMapPublisher->SetCurrentCameraPose(pKFcur->GetPose());
+	    mpMapPublisher->SetCurrentCameraPose(mCurrentFrame.mTcw, mCurrentFrame.mTimeStamp);
+        mpMapPublisher->SetCurrentCameraPoseHessian(mPoseHessian);
+    }
 
 
     mpMap->mvpKeyFrameOrigins.push_back(pKFini);
@@ -797,7 +802,7 @@ bool Tracking::TrackReferenceKeyFrame()
     mCurrentFrame.mvpMapPoints = vpMapPointMatches;
     mCurrentFrame.SetPose(mLastFrame.mTcw);
 
-    Optimizer::PoseOptimization(&mCurrentFrame);
+    Optimizer::PoseOptimization(&mCurrentFrame, &mPoseHessian);
 
     // Discard outliers
     int nmatchesMap = 0;
@@ -920,7 +925,7 @@ bool Tracking::TrackWithMotionModel()
         return false;
 
     // Optimize frame pose with all matches
-    Optimizer::PoseOptimization(&mCurrentFrame);
+    Optimizer::PoseOptimization(&mCurrentFrame, &mPoseHessian);
 
     // Discard outliers
     int nmatchesMap = 0;
@@ -962,7 +967,7 @@ bool Tracking::TrackLocalMap()
     SearchLocalPoints();
 
     // Optimize Pose
-    Optimizer::PoseOptimization(&mCurrentFrame);
+    Optimizer::PoseOptimization(&mCurrentFrame, &mPoseHessian);
     mnMatchesInliers = 0;
 
     // Update MapPoints Statistics
@@ -1462,7 +1467,7 @@ bool Tracking::Relocalization()
                         mCurrentFrame.mvpMapPoints[j]=NULL;
                 }
 
-                int nGood = Optimizer::PoseOptimization(&mCurrentFrame);
+                int nGood = Optimizer::PoseOptimization(&mCurrentFrame, &mPoseHessian);
 
                 if(nGood<10)
                     continue;
@@ -1478,7 +1483,7 @@ bool Tracking::Relocalization()
 
                     if(nadditional+nGood>=50)
                     {
-                        nGood = Optimizer::PoseOptimization(&mCurrentFrame);
+                        nGood = Optimizer::PoseOptimization(&mCurrentFrame, &mPoseHessian);
 
                         // If many inliers but still not enough, search by projection again in a narrower window
                         // the camera has been already optimized with many points
@@ -1493,7 +1498,7 @@ bool Tracking::Relocalization()
                             // Final optimization
                             if(nGood+nadditional>=50)
                             {
-                                nGood = Optimizer::PoseOptimization(&mCurrentFrame);
+                                nGood = Optimizer::PoseOptimization(&mCurrentFrame, &mPoseHessian);
 
                                 for(int io =0; io<mCurrentFrame.N; io++)
                                     if(mCurrentFrame.mvbOutlier[io])

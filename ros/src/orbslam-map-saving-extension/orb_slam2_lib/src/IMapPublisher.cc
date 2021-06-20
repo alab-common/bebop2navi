@@ -9,7 +9,6 @@ using namespace std;
 
 //void IMapPublisher::SetCurrentCameraPose(const cv::Mat &Tcw)
 void IMapPublisher::SetCurrentCameraPose(const cv::Mat &Tcw, const double &timestamp)
-
 {
     unique_lock<mutex> lock(mMutexCamera);
     mCameraPose = Tcw.clone();
@@ -18,13 +17,24 @@ void IMapPublisher::SetCurrentCameraPose(const cv::Mat &Tcw, const double &times
     mbCameraUpdated = true;
 }
 
+void IMapPublisher::SetCurrentCameraPoseHessian(const std::vector<std::vector<double>> hessian)
+{
+    unique_lock<mutex> lock(mMutexCamera);
+    mPoseHessian = hessian;
+}
+
 //cv::Mat IMapPublisher::GetCameraPose()
 std::pair<cv::Mat, double> IMapPublisher::GetCameraPose()
-
 {
     unique_lock<mutex> lock(mMutexCamera);
     //return mCameraPose;
     return std::make_pair(mCameraPose, mCameraTimestamp);
+}
+
+std::vector<std::vector<double>> IMapPublisher::GetPoseHessian()
+{
+    unique_lock<mutex> lock(mMutexCamera);
+    return mPoseHessian;
 }
 
 bool IMapPublisher::isCamUpdated()

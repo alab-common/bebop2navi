@@ -98,6 +98,9 @@ public:
     Frame mCurrentFrame;
     cv::Mat mImGray;
 
+    // current Hessian matrices
+    std::vector<std::vector<double>> mPoseHessian;
+
     // Initialization Variables (Monocular)
     std::vector<int> mvIniLastMatches;
     std::vector<int> mvIniMatches;

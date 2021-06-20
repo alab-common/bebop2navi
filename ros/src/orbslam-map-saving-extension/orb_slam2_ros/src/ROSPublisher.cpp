@@ -187,6 +187,10 @@ ROSPublisher::ROSPublisher(Map *map, double frequency, bool bReuseMap_, ros::Nod
     nh.param<float>("occupancy_gradient_low_slope", gradient_low_slope_, ROSPublisher::GRADIENT_LOW_SLOPE);
     nh.param<float>("occupancy_gradient_high_slope", gradient_high_slope_, ROSPublisher::GRADIENT_HIGH_SLOPE);
 
+    nh.param<double>("pose_covariance_scale_factor", pose_covariance_scale_factor_, 0.05);
+    nh.param<bool>("use_static_covariance_matrix", use_static_covariance_matrix_, false);
+    nh.param<double>("static_covariance_matrix_value", static_covariance_matrix_value_, 0.1);
+
     camera_position_old={0.0, 0.0, 0.0};
 
     // initialize publishers
@@ -201,8 +205,7 @@ ROSPublisher::ROSPublisher(Map *map, double frequency, bool bReuseMap_, ros::Nod
     image_pub_ = nh_.advertise<sensor_msgs::Image>("frame", 5);
     state_pub_ = nh_.advertise<orb_slam2_ros::ORBState>("state", 10);
     state_desc_pub_ = nh_.advertise<std_msgs::String>("state_description", 10);
-    pose_pub_ = nh_.advertise<geometry_msgs::PoseWithCovarianceStamped>("pose_Hpp", 10);
-	pose_pub_1 = nh_.advertise<geometry_msgs::PoseWithCovarianceStamped>("pose_Slam_Hessian", 10);
+    pose_pub_ = nh_.advertise<geometry_msgs::PoseWithCovarianceStamped>("pose", 10);
 
 
     if (octomap_enabled_)
@@ -632,6 +635,102 @@ void ROSPublisher::publishMapUpdates()
     }
 }
 
+std::vector<std::vector<double>> getInverseMatrix(std::vector<std::vector<double>> &a)
+{  
+    int n = a.size();
+   	 
+    std::vector<std::vector<double>> vec(n);
+    for(int i=0;i<n;i++)
+        vec[i].resize(n);
+    int *is = new int[n];  
+    int *js = new int[n];  
+    int i,j,k;  
+    double d,p;  
+    for ( k = 0; k < n; k++)  
+    {  
+        d = 0.0;  
+        for (i=k; i<=n-1; i++) 
+		{  
+            for (j=k; j<=n-1; j++)  
+            {  
+                p=fabs(a[i][j]);  
+                if (p>d)
+                        { d=p; is[k]=i; js[k]=j;}  
+            }  
+            if ( 0.0 == d )  
+            {  
+                free(is); free(js);
+				vector<vector<double>> res = a; 
+                return res;  
+            }  
+            if (is[k]!=k)
+			{  
+                for (j=0; j<=n-1; j++)  
+                {  
+                    p=a[k][j];  
+                    a[k][j]=a[is[k]][j];  
+                    a[is[k]][j]=p;  
+                }
+			}
+  
+            if (js[k]!=k)  
+                for (i=0; i<=n-1; i++)  
+                {  
+                    p=a[i][k];  
+                    a[i][k]=a[i][js[k]];  
+                    a[i][js[k]]=p;  
+                }  
+            a[k][k] = 1.0/a[k][k];  
+            for (j=0; j<=n-1; j++)
+			{  
+                if (j!=k)  
+                {  
+                    a[k][j] *= a[k][k];  
+                }
+			}  
+            for (i=0; i<=n-1; i++)
+			{  
+                if (i!=k)  
+                    for (j=0; j<=n-1; j++)  
+                        if (j!=k)  
+                        {  
+                            a[i][j] -= a[i][k]*a[k][j];  
+                        }
+			}  
+            for (i=0; i<=n-1; i++)
+			{  
+                if (i!=k)  
+                {  
+                    a[i][k] = -a[i][k]*a[k][k];  
+                }
+			}
+		}  
+    }  
+    for ( k = n-1; k >= 0; k--)  
+    {  
+        if (js[k]!=k)
+		{  
+            for (j=0; j<=n-1; j++)  
+            {  
+                p = a[k][j];  
+                a[k][j] = a[js[k]][j];  
+                a[js[k]][j]=p;  
+            }  
+            if (is[k]!=k)  
+                for (i=0; i<=n-1; i++)  
+                {   
+                    p = a[i][k];  
+                    a[i][k]=a[i][is[k]];  
+                    a[i][is[k]] = p;  
+                }
+		}  
+    }  
+    free(is);
+    free(js); 
+    std::vector<std::vector<double>> res = a; 
+    return res;  
+}  
+
 /*
  * Publishes ORB_SLAM 2 GetCameraPose() as a TF.
  */
@@ -644,7 +743,10 @@ void ROSPublisher::publishCameraPose()
     double camera_timestamp;
     std::tie(camera_pose, camera_timestamp) = GetCameraPose();
     cv::Mat xf = computeCameraTransform(camera_pose);
-
+    std::vector<std::vector<double>> poseHessian = GetPoseHessian();
+    std::vector<std::vector<double>> poseHessianInv;
+    if ((int)poseHessian.size() == 6 && (int)poseHessian[0].size() == 6)
+        poseHessianInv = getInverseMatrix(poseHessian);
 
     if (!xf.empty()) {
         camera_position_ = { xf.at<float>(0, 3), xf.at<float>(1, 3), xf.at<float>(2, 3) };
@@ -653,39 +755,9 @@ void ROSPublisher::publishCameraPose()
             tf::Transform(orientation, camera_position_),
             //ros::Time::now(), ROSPublisher::DEFAULT_MAP_FRAME, ROSPublisher::DEFAULT_CAMERA_FRAME);
             ros::Time(camera_timestamp), ROSPublisher::DEFAULT_MAP_FRAME, ROSPublisher::DEFAULT_CAMERA_FRAME);
-            
-     
 
         camera_tf_pub_.sendTransform(transform);
-        
-        
-        if (pose_pub_1.getNumSubscribers() > 0)
-        {
-            geometry_msgs::PoseWithCovarianceStamped msg;
-            msg.header.stamp = ros::Time(camera_timestamp);
-            msg.header.frame_id = "/camera_world";
-            msg.pose.pose.orientation.x = orientation.x();
-            msg.pose.pose.orientation.y = orientation.y();
-            msg.pose.pose.orientation.z = orientation.z();
-            msg.pose.pose.orientation.w = orientation.w();
-            msg.pose.pose.position.x = camera_position_.x();
-            msg.pose.pose.position.y = camera_position_.y();
-            msg.pose.pose.position.z = camera_position_.z();
-            //msg.pose.covariance[6*0+0] = 0.5 * 0.5;
-			
-            //msg.pose.covariance[6*1+1] = 0.5 * 0.5;
-
-            //msg.pose.covariance[6*5+5] = M_PI/12.0 * M_PI/12.0;
-			boost::array<double, 36> SLAM_Hessian =  {4.55666e-07,	-1.33193e-08,	1.97759e-08,	1.18017e-08, 1.9164e-07, 1.07234e-09,	
-								   -1.33193e-08,	3.13216e-07,	-2.44762e-08,	-1.50203e-07,	-1.13234e-08,	-1.54416e-08,	
-									1.97759e-08,	-2.44762e-08,	1.55026e-07,	1.14961e-08,	2.07999e-08,	1.85749e-09,	
-									1.18017e-08,	-1.50203e-07,	1.14961e-08,	7.83862e-08,	7.65976e-09,	2.42989e-09,	
-									1.9164e-07,	-1.13234e-08,	2.07999e-08,	7.65976e-09,	8.68142e-08,	8.226e-10,	
-									1.07234e-09,	-1.54416e-08,	1.85749e-09,	2.42989e-09,	8.226e-10,	2.5574e-08};
-			msg.pose.covariance = SLAM_Hessian;
-            pose_pub_1.publish(msg);
-        }
-
+       
 		if (pose_pub_.getNumSubscribers() > 0)
         {
             geometry_msgs::PoseWithCovarianceStamped msg;
@@ -698,21 +770,31 @@ void ROSPublisher::publishCameraPose()
             msg.pose.pose.position.x = camera_position_.x();
             msg.pose.pose.position.y = camera_position_.y();
             msg.pose.pose.position.z = camera_position_.z();
-            //msg.pose.covariance[6*0+0] = 0.5 * 0.5;
-			
-            //msg.pose.covariance[6*1+1] = 0.5 * 0.5;
+            if ((int)poseHessianInv.size() == 6 && (int)poseHessianInv[0].size() == 6 && !use_static_covariance_matrix_)
+            {
+                double scale = 1.0 / (pose_covariance_scale_factor_ * pose_covariance_scale_factor_);
+                for (int i = 0; i < 6; i++)
+                {
+                    for (int j = 0; j < 6; j++)
+                        msg.pose.covariance[i * 6 + j] = scale * poseHessianInv[i][j];
+                }
+            }
+            else
+            {
+                for (int i = 0; i < 6; i++)
+                {
+                    for (int j = 0; j < 6; j++)
+                    {
+                        if (i == j)
+                            msg.pose.covariance[i * 6 + j] = static_covariance_matrix_value_;
+                        else
+                            msg.pose.covariance[i * 6 + j] = 0.0;
+                    }
+                }
+            }
 
-            //msg.pose.covariance[6*5+5] = M_PI/12.0 * M_PI/12.0;
-			boost::array<double, 36> Hpp =  {2.33085e-07,	4.3292e-09,	1.30772e-09, 1.30099e-09,	8.30652e-08,	-4.39103e-09,	
-										4.3292e-09,	1.65227e-07,	-1.02107e-08,	-6.62715e-08,	-6.54037e-10,	-1.27698e-08,	
-										1.30772e-09,	-1.02107e-08,	1.39664e-07,	3.81852e-09,	9.61689e-09,	7.90506e-10,	
-										1.30099e-09,	-6.62715e-08,	3.81852e-09,	3.09111e-08,	1.35539e-09,	1.77344e-09,	
-										8.30652e-08,	-6.54037e-10,	9.61689e-09,	1.35539e-09,	3.38296e-08,	-1.55854e-09,	
-										-4.39103e-09,	-1.27698e-08,	7.90506e-10,	1.77344e-09,	-1.55854e-09,	1.96355e-08	};
-			msg.pose.covariance = Hpp;
             pose_pub_.publish(msg);
         }
-
 
         // get the stamp of transform and call the function to publish odom
         // pass the quaternion orientation
@@ -720,7 +802,6 @@ void ROSPublisher::publishCameraPose()
         //ros::Time stamp = transform.stamp_;
         //ROSPublisher::publishOdom(orientation);
         //ResetCamFlag();
-
 
     }
     else

@@ -143,9 +143,10 @@ namespace g2o {
       virtual void multiplyHessian(double* dest, const double* src) const { _Hpp->multiplySymmetricUpperTriangle(dest, src);}
 
       SparseBlockMatrix<PoseMatrixType>* getPoseHessian(void) { return _Hpp; }
-	  SparseBlockMatrix<PoseLandmarkMatrixType>* getPoseHessian_pl(void) { return _Hpl; }
-	  SparseBlockMatrix<LandmarkMatrixType>* getPoseHessian_ll(void) { return _Hll; }
-		
+      SparseBlockMatrix<PoseLandmarkMatrixType>* getPoseLandmarkHessian(void) { return _Hpl; }
+      SparseBlockMatrix<LandmarkMatrixType>* getLandmarkHessian(void) { return _Hll; }
+      SparseBlockMatrix<PoseMatrixType>* getHschur(void) { return _Hschur; }
+
 
     protected:
       void resize(int* blockPoseIndices, int numPoseBlocks, 
