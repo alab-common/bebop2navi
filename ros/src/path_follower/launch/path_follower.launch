@@ -2,7 +2,7 @@
 
 <launch >
     <!-- arguments -->
-    <arg name="path_file" default="$(find path_follower)/data/kkzt_straight.txt" />
+    <arg name="path_file" default="$(find path_follower)/data/kkzt2_orb.txt" />
     <arg name="map_frame" default="/map" />
     <arg name="base_link_frame" default="/base_link2" />
     <arg name="path_topic_name" default="/target_path" />
@@ -16,8 +16,8 @@
     <arg name="bvyaw" default="0.01" />
     <arg name="pgy" default="0.3" />
     <arg name="dgy" default="0.05" />
-    <arg name="pgz" default="0.3" />
-    <arg name="dgz" default="0.05" />
+    <arg name="pgz" default="0.8" />
+    <arg name="dgz" default="0.1" />
     <arg name="pgyaw" default="0.3" />
     <arg name="dgyaw" default="0.05" />
     <arg name="cmd_publish_hz" default="20.0" />

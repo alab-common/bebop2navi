@@ -158,8 +158,8 @@ void PathFollower::spin(void)
         }
         else
         {
-            i0 = prev_nearest_path_index - 3;
-            i1 = prev_nearest_path_index + 3;
+            i0 = prev_nearest_path_index + 0;
+            i1 = prev_nearest_path_index + 10;
             if (i0 < 1)
                 i0 = 1;
             if (i1 >= path.poses.size())
@@ -185,6 +185,7 @@ void PathFollower::spin(void)
         prev_nearest_path_index = nearest_path_index;
         // search the target path point
         int target_path_index = -1;
+        printf("nearest_path_index = %d\n", nearest_path_index);
         for (int i = nearest_path_index; i < path.poses.size(); i++)
         {
             double dx = path.poses[i].pose.position.x - x;
@@ -234,20 +235,19 @@ void PathFollower::spin(void)
             // double ex = dx * cos(pyaw) + dy * sin(pyaw);
             double ey = -dx * sin(pyaw) + dy * cos(pyaw);
             double ez = dz;
-            ey /= translation_scale;
-            ez /= translation_scale;
             double eyaw = pyaw - yaw;
             if (eyaw < -M_PI)
                 eyaw += 2.0 * M_PI;
             if (eyaw > M_PI)
                 eyaw -= 2.0 * M_PI;
-            double vx = max_linear_vel - bvy * fabs(ey) - bvz * fabs(ez) - bvyaw * fabs(eyaw);
-            if (vx < 0.0)
-                vx = 0.0;
-            double vy = pgy * ey + dgy * eyo;
+            // double v = max_linear_vel - bvy * fabs(ey) - bvz * fabs(ez) - bvyaw * fabs(eyaw);
+            double v = max_linear_vel - bvz * fabs(ez) - bvyaw * fabs(eyaw);
+            if (v < 0.0)
+                v = 0.0;
+            double vx = v * cos(dyaw);
+            double vy = v * sin(dyaw);
             double vz = pgz * ez + dgz * ezo;
-            vz = 0.0;
-            double wz = pgy * eyaw + dgy * eyawo;
+            double wz = pgyaw * eyaw + dgyaw * eyawo;
             vx = check_velocity(vx, max_linear_vel);
             vy = check_velocity(vy, max_linear_vel);
             vz = check_velocity(vz, max_linear_vel);
