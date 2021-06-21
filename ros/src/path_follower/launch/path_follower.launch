@@ -11,21 +11,18 @@
     <arg name="look_ahead_dist" default="0.1" />
     <arg name="max_linear_vel" default="0.1" />
     <arg name="max_angular_vel" default="0.1" />
-    <arg name="bvy" default="0.01" />
     <arg name="bvz" default="0.01" />
     <arg name="bvyaw" default="0.01" />
-    <arg name="pgy" default="0.3" />
-    <arg name="dgy" default="0.05" />
     <arg name="pgz" default="0.8" />
     <arg name="dgz" default="0.1" />
     <arg name="pgyaw" default="0.3" />
     <arg name="dgyaw" default="0.05" />
     <arg name="cmd_publish_hz" default="20.0" />
-    <arg name="translation_scale" default="0.1" />
-    <arg name="displacement_threshold" default="0.2" />
+    <arg name="displacement_threshold" default="0.5" />
     <arg name="stop" default="true" />
     <arg name="iterate_following" default="false" />
     <arg name="publish_twist" default="false" />
+    <arg name="path_target_marker_size" default="0.1" />
 
     <!-- path server -->
     <node name="path_server" pkg="path_follower" type="path_server" args="$(arg path_file)" >
@@ -43,20 +40,17 @@
         <param name="/look_ahead_dist" value="$(arg look_ahead_dist)" type="double" />
         <param name="/max_linear_vel" value="$(arg max_linear_vel)" type="double" />
         <param name="/max_angular_vel" value="$(arg max_angular_vel)" type="double" />
-        <param name="/bvy" value="$(arg bvy)" type="double" />
         <param name="/bvz" value="$(arg bvz)" type="double" />
         <param name="/bvyaw" value="$(arg bvyaw)" type="double" />
-        <param name="/pgy" value="$(arg pgy)" type="double" />
-        <param name="/dgy" value="$(arg dgy)" type="double" />
         <param name="/pgz" value="$(arg pgz)" type="double" />
         <param name="/dgz" value="$(arg dgz)" type="double" />
         <param name="/pgyaw" value="$(arg pgyaw)" type="double" />
         <param name="/dgyaw" value="$(arg dgyaw)" type="double" />
         <param name="/cmd_publish_hz" value="$(arg cmd_publish_hz)" type="double" />
         <param name="/displacement_threshold" value="$(arg displacement_threshold)" type="double" />
-        <param name="/translation_scale" value="$(arg translation_scale)" type="double" />
         <param name="/stop" value="$(arg stop)" type="bool" />
-        <param name="/iterate_following" value="$(arg iterate_following)" type="string" />
+        <param name="/iterate_following" value="$(arg iterate_following)" type="bool" />
         <param name="/publish_twist" value="$(arg publish_twist)" type="bool" />
+        <param name="/path_target_marker_size" value="$(arg path_target_marker_size)" type="double" />
     </node >
 </launch >

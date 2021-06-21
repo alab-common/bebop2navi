@@ -11,6 +11,12 @@
     <arg name="fused_pose_hz" default="20.0" />
     <arg name="slam_lost_time" default="1.0" />
     <arg name="scale_factor" default="0.2" />
+    <arg name="initial_pose_x" default="0.0" />
+    <arg name="initial_pose_y" default="0.0" />
+    <arg name="initial_pose_z" default="0.0" />
+    <arg name="initial_pose_roll" default="0.0" />
+    <arg name="initial_pose_pitch" default="0.0" />
+    <arg name="initial_pose_yaw" default="0.0" />
     <arg name="initial_cov_xx" default="0.1" />
     <arg name="initial_cov_yy" default="0.1" />
     <arg name="initial_cov_zz" default="0.1" />
@@ -43,6 +49,12 @@
         <param name="/fused_pose_hz" value="$(arg fused_pose_hz)" type="double" />
         <param name="/slam_lost_time" value="$(arg slam_lost_time)" type="double" />
         <param name="/scale_factor" value="$(arg scale_factor)" type="double" />
+        <param name="/initial_pose_x" value="$(arg initial_pose_x)" type="double" />
+        <param name="/initial_pose_y" value="$(arg initial_pose_y)" type="double" />
+        <param name="/initial_pose_z" value="$(arg initial_pose_z)" type="double" />
+        <param name="/initial_pose_roll" value="$(arg initial_pose_roll)" type="double" />
+        <param name="/initial_pose_pitch" value="$(arg initial_pose_pitch)" type="double" />
+        <param name="/initial_pose_yaw" value="$(arg initial_pose_yaw)" type="double" />
         <param name="/initial_cov_xx" value="$(arg initial_cov_xx)" type="double" />
         <param name="/initial_cov_yy" value="$(arg initial_cov_yy)" type="double" />
         <param name="/initial_cov_zz" value="$(arg initial_cov_zz)" type="double" />

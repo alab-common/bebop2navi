@@ -25,8 +25,8 @@ private:
     nav_msgs::Path path;
     tf::TransformListener tf_listener;
     double look_ahead_dist, max_linear_vel, max_angular_vel;
-    double bvy, bvz, bvyaw, pgy, dgy, pgz, dgz, pgyaw, dgyaw;
-    double cmd_publish_hz, displacement_threshold, translation_scale;
+    double bvz, bvyaw, pgz, dgz, pgyaw, dgyaw;
+    double cmd_publish_hz, displacement_threshold, path_target_marker_size;
     bool iterate_following, publish_twist;
     int nearest_path_index, prev_nearest_path_index;
 
@@ -47,18 +47,15 @@ PathFollower::PathFollower():
     look_ahead_dist(0.05),
     max_linear_vel(0.1),
     max_angular_vel(0.1),
-    bvy(1.0),
     bvz(1.0),
     bvyaw(1.0),
-    pgy(0.4),
-    dgy(0.05),
     pgz(0.4),
     dgz(0.05),
     pgyaw(0.25),
     dgyaw(0.05),
     cmd_publish_hz(20.0),
+    path_target_marker_size(0.1),
     displacement_threshold(1.0),
-    translation_scale(1.0),
     prev_nearest_path_index(-1),
     iterate_following(false),
     publish_twist(false),
@@ -72,20 +69,17 @@ PathFollower::PathFollower():
     nh.param("look_ahead_dist", look_ahead_dist, look_ahead_dist);
     nh.param("max_linear_vel", max_linear_vel, max_linear_vel);
     nh.param("max_angular_vel", max_angular_vel, max_angular_vel);
-    nh.param("bvy", bvy, bvy);
     nh.param("bvz", bvz, bvz);
     nh.param("bvyaw", bvyaw, bvyaw);
-    nh.param("pgy", pgy, pgy);
-    nh.param("dgy", dgy, dgy);
     nh.param("pgz", pgz, pgz);
     nh.param("dgz", dgz, dgz);
     nh.param("pgyaw", pgyaw, pgyaw);
     nh.param("dgyaw", dgyaw, dgyaw);
     nh.param("cmd_publish_hz", cmd_publish_hz, cmd_publish_hz);
     nh.param("displacement_threshold", displacement_threshold, displacement_threshold);
-    nh.param("translation_scale", translation_scale, translation_scale);
     nh.param("iterate_following", iterate_following, iterate_following);
     nh.param("publish_twist", publish_twist, publish_twist);
+    nh.param("path_target_marker_size", path_target_marker_size, path_target_marker_size);
     // subscriber
     path_sub = nh.subscribe(input_path_topic_name, 1, &PathFollower::path_callback, this);
     // publisher
@@ -98,13 +92,13 @@ PathFollower::PathFollower():
 void PathFollower::path_callback(const nav_msgs::Path::ConstPtr& msg)
 {
     path = *msg;
-    prev_nearest_path_index = -1;
+//    prev_nearest_path_index = -1;
 }
 
 void PathFollower::spin(void)
 {
     prev_nearest_path_index = 0;
-    double eyo = 0.0, ezo = 0.0, eyawo = 0.0;
+    double ezo = 0.0, eyawo = 0.0;
     ros::Rate loop_rate(cmd_publish_hz);
     while (ros::ok())
     {
@@ -133,7 +127,7 @@ void PathFollower::spin(void)
             cmd_pub.publish(cmd_vel);
             if (publish_twist)
                 twist_pub.publish(twist_cmd);
-            eyo = ezo = eyawo = 0.0;
+            ezo = eyawo = 0.0;
             ROS_WARN("%s cannot be read from the tf tree. Published zero velocities.", base_link_frame.c_str());
             ROS_ERROR("%s", ex.what());
             continue;
@@ -186,7 +180,7 @@ void PathFollower::spin(void)
         prev_nearest_path_index = nearest_path_index;
         // search the target path point
         int target_path_index = -1;
-        printf("nearest_path_index = %d\n", nearest_path_index);
+//        for (int i = nearest_path_index; i < path.poses.size(); i++)
         for (int i = nearest_path_index; i < path.poses.size(); i++)
         {
             double dx = path.poses[i].pose.position.x - x;
@@ -215,7 +209,7 @@ void PathFollower::spin(void)
             twist_cmd.angular.y = cmd_vel.transform.rotation.y = 0.0;
             twist_cmd.angular.z = cmd_vel.transform.rotation.z = 0.0;
             cmd_vel.transform.rotation.w = 0.0; // this is used as priority
-            eyo = ezo = eyawo = 0.0;
+            ezo = eyawo = 0.0;
         }
         else
         {
@@ -232,16 +226,14 @@ void PathFollower::spin(void)
             double dz = path.poses[target_path_index].pose.position.z - z;
             double dl = sqrt(dx * dx + dy * dy + dz * dz);
             double dyaw = atan2(dy, dx);
-            double dpitch = atan2(dz, sqrt(dx * dx + dy * dy));
             // double ex = dx * cos(pyaw) + dy * sin(pyaw);
-            double ey = -dx * sin(pyaw) + dy * cos(pyaw);
+            // double ey = -dx * sin(pyaw) + dy * cos(pyaw);
             double ez = dz;
             double eyaw = pyaw - yaw;
             if (eyaw < -M_PI)
                 eyaw += 2.0 * M_PI;
             if (eyaw > M_PI)
                 eyaw -= 2.0 * M_PI;
-            // double v = max_linear_vel - bvy * fabs(ey) - bvz * fabs(ez) - bvyaw * fabs(eyaw);
             double v = max_linear_vel - bvz * fabs(ez) - bvyaw * fabs(eyaw);
             if (v < 0.0)
                 v = 0.0;
@@ -266,7 +258,6 @@ void PathFollower::spin(void)
             twist_cmd.angular.y = cmd_vel.transform.rotation.y = 0.0;
             twist_cmd.angular.z = cmd_vel.transform.rotation.z = wz;
             cmd_vel.transform.rotation.w = 5.0; // this is used as priority
-            eyo = ey;
             ezo = ez;
             eyawo = eyaw;
         }
@@ -285,9 +276,9 @@ void PathFollower::spin(void)
             marker.type = visualization_msgs::Marker::SPHERE;
             marker.action = visualization_msgs::Marker::ADD;
             marker.lifetime = ros::Duration();
-            marker.scale.x = 0.5 * translation_scale;
-            marker.scale.y = 0.5 * translation_scale;
-            marker.scale.z = 0.5 * translation_scale;
+            marker.scale.x = path_target_marker_size;
+            marker.scale.y = path_target_marker_size;
+            marker.scale.z = path_target_marker_size;
             marker.pose.position.x = path.poses[target_path_index].pose.position.x;
             marker.pose.position.y = path.poses[target_path_index].pose.position.y;
             marker.pose.position.z = path.poses[target_path_index].pose.position.z;
@@ -321,7 +312,7 @@ void PathFollower::spin(void)
             printf("\n");
         }
         // check iteration for path following
-        // nh.getParam("/path_follower/iterate_following", iterate_following);
+        nh.getParam("/path_follower/iterate_following", iterate_following);
         if (target_path_index < 0 && (int)path.poses.size() != 0 && iterate_following)
             prev_nearest_path_index = 0;
         // sleep

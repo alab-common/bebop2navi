@@ -38,6 +38,8 @@ public:
     double fusedPoseHz_;
     double slamLostTime_;
     double scaleFactor_;
+    double initialPoseX_, initialPoseY_, initialPoseZ_;
+    double initialPoseRoll_, initialPosePitch_, initialPoseYaw_;
     double initialCovXX_, initialCovYY_, initialCovZZ_;
     double initialCovRollRoll_, initialCovPitchPitch_, initialCovYawYaw_;
     double initialCov_;
@@ -64,17 +66,23 @@ PoseFuser::PoseFuser():
     fusedFrame_("/fused_frame"),
     mapFrame_("/map"),
     isNotSlamMsg_(true),
-    fusedPoseHz_(20.0f),
-    slamLostTime_(0.2f),
-    scaleFactor_(0.11f),
+    fusedPoseHz_(20.0),
+    slamLostTime_(0.2),
+    scaleFactor_(0.2),
     cmdVel_(6),
-    initialCovXX_(2.0f),
-    initialCovYY_(2.0f),
-    initialCovZZ_(1.0f),
-    initialCovRollRoll_(2.0f),
-    initialCovPitchPitch_(2.0f),
-    initialCovYawYaw_(2.0f),
-    initialCov_(std::pow(10.0f, -6))
+    initialPoseX_(0.0),
+    initialPoseY_(0.0),
+    initialPoseZ_(0.0),
+    initialPoseRoll_(0.0),
+    initialPosePitch_(0.0),
+    initialPoseYaw_(0.0),
+    initialCovXX_(2.0),
+    initialCovYY_(2.0),
+    initialCovZZ_(1.0),
+    initialCovRollRoll_(2.0),
+    initialCovPitchPitch_(2.0),
+    initialCovYawYaw_(2.0),
+    initialCov_(std::pow(10.0, -6))
 {   
     noiseParam_ = 
         {0.6, 0.6, 0.6, 0.8, 0.8, 0.8,
@@ -95,10 +103,16 @@ PoseFuser::PoseFuser():
     nh_.param("fused_pose_hz", fusedPoseHz_, fusedPoseHz_);
     nh_.param("slam_lost_time", slamLostTime_, slamLostTime_);
     nh_.param("scale_factor", scaleFactor_, scaleFactor_);
+    nh_.param("initial_pose_x", initialPoseX_, initialPoseX_);
+    nh_.param("initial_pose_y", initialPoseY_, initialPoseY_);
+    nh_.param("initial_pose_z", initialPoseZ_, initialPoseZ_);
+    nh_.param("initial_pose_roll", initialPoseRoll_, initialPoseRoll_);
+    nh_.param("initial_pose_pitch", initialPosePitch_, initialPosePitch_);
+    nh_.param("initial_pose_yaw", initialPoseYaw_, initialPoseYaw_);
     nh_.param("initial_cov_xx", initialCovXX_, initialCovXX_);
     nh_.param("initial_cov_yy", initialCovYY_, initialCovYY_);
     nh_.param("initial_cov_zz", initialCovZZ_, initialCovZZ_);
-    nh_.param("initial_cov_rollroll", initialCovRollRoll_, initialCovPitchPitch_);
+    nh_.param("initial_cov_rollroll", initialCovRollRoll_, initialCovRollRoll_);
     nh_.param("initial_cov_pitchpitch", initialCovPitchPitch_, initialCovPitchPitch_);
     nh_.param("initial_cov_yawyaw", initialCovYawYaw_, initialCovYawYaw_);
     nh_.param("initial_cov", initialCov_, initialCov_);
@@ -106,7 +120,13 @@ PoseFuser::PoseFuser():
 
     // set initial pose
     pose_ = Eigen::VectorXd::Zero(6);
-    pose_(0) = 0.1;
+    pose_(0) = initialPoseX_;
+    pose_(1) = initialPoseY_;
+    pose_(2) = initialPoseZ_;
+    pose_(3) = initialPoseRoll_;
+    pose_(4) = initialPosePitch_;
+    pose_(5) = initialPoseYaw_;
+
     // set initial covariance matrix of pose
     covMat_ = initialCov_ * Eigen::MatrixXd::Ones(6,6);
     covMat_(0,0) = initialCovXX_;

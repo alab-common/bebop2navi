@@ -1,6 +1,7 @@
 <!-- path following launch -->
 <launch >
     <!-- fundamental parameters -->
+    <arg name="path_file" default="$(find path_follower)/data/kkzt_run.txt" />
     <arg name="map_frame" default="/map" />
     <arg name="base_link_frame" default="/base_link2" />
 
@@ -23,7 +24,6 @@
     <arg name="max_linear_vel" default="0.07" />
     <arg name="max_angular_vel" default="0.1" />
     <!-- speed down parameters -->
-    <arg name="bvy" default="0.03" />
     <arg name="bvz" default="0.03" />
     <arg name="bvyaw" default="0.03" />
     <!-- PD gain parameters -->
@@ -35,13 +35,13 @@
     <arg name="dgyaw" default="0.05" />
     <!-- If the positional displacement exceeds it, the path follower will publish zero velocities. -->
     <arg name="displacement_threshold" default="0.4" />
-    <arg name="translation_scale" default="0.1" />
     <!-- This should be true.
          If not, the robot will immediately start following after launching this script. -->
     <arg name="stop" default="true" />
     <!-- The robot will cyclically follow a loop path if it is true. -->
     <arg name="iterate_following" default="false" />
     <arg name="cmd_publish_hz" default="20.0" />
+    <arg name="path_target_marker_size" default="0.1" />
 
 
 
@@ -50,6 +50,7 @@
     <!-- localization -->
     <include file="localization.launch" >
         <arg name="use_pose_fuser" value="$(arg use_pose_fuser)" />
+        <arg name="orb_slam_output" value="log" />
     </include >
 
     <!-- velocity selector -->
@@ -69,24 +70,22 @@
     <!-- path follower -->
     <include file="$(find path_follower)/launch/path_follower.launch" >
         <arg name="publish_twist" value="false" />
+        <arg name="path_file" value="$(arg path_file)" />
         <arg name="map_frame" value="$(arg map_frame)" />
         <arg name="base_link_frame" value="$(arg base_link_frame)" />
         <arg name="look_ahead_dist" value="$(arg look_ahead_dist)" />
         <arg name="max_linear_vel" value="$(arg max_linear_vel)" />
         <arg name="max_angular_vel" value="$(arg max_angular_vel)" />
-        <arg name="bvy" value="$(arg bvy)" />
         <arg name="bvz" value="$(arg bvz)" />
         <arg name="bvyaw" value="$(arg bvyaw)" />
-        <arg name="pgy" value="$(arg pgy)" />
-        <arg name="dgy" value="$(arg dgy)" />
         <arg name="pgz" value="$(arg pgz)" />
         <arg name="dgz" value="$(arg dgz)" />
         <arg name="pgyaw" value="$(arg pgyaw)" />
         <arg name="dgyaw" value="$(arg dgyaw)" />
         <arg name="cmd_publish_hz" value="$(arg cmd_publish_hz)" />
         <arg name="displacement_threshold" value="$(arg displacement_threshold)" />
-        <arg name="translation_scale" value="$(arg translation_scale)" />
         <arg name="stop" value="$(arg stop)" />
         <arg name="iterate_following" value="$(arg iterate_following)" />
+        <arg name="path_target_marker_size" value="$(arg path_target_marker_size)" />
     </include >
 </launch >

@@ -10,6 +10,7 @@
 
     <include file="localization.launch" unless="$(arg mapping_mode)" >
         <arg name="use_pose_fuser" value="$(arg use_pose_fuser)" />
+        <arg name="orb_slam_output" value="log" />
     </include >
 
     <include file="$(find path_follower)/launch/path_recorder.launch" >
