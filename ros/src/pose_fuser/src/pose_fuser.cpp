@@ -106,6 +106,7 @@ PoseFuser::PoseFuser():
 
     // set initial pose
     pose_ = Eigen::VectorXd::Zero(6);
+    pose_(0) = 0.1;
     // set initial covariance matrix of pose
     covMat_ = initialCov_ * Eigen::MatrixXd::Ones(6,6);
     covMat_(0,0) = initialCovXX_;

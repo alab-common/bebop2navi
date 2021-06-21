@@ -103,6 +103,7 @@ void PathFollower::path_callback(const nav_msgs::Path::ConstPtr& msg)
 
 void PathFollower::spin(void)
 {
+    prev_nearest_path_index = 0;
     double eyo = 0.0, ezo = 0.0, eyawo = 0.0;
     ros::Rate loop_rate(cmd_publish_hz);
     while (ros::ok())

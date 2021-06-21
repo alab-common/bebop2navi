@@ -19,13 +19,13 @@
     <arg name="joy_velocities_coef" default="0.1" />
 
     <!-- parameters for the path following -->
-    <arg name="look_ahead_dist" default="0.1" />
-    <arg name="max_linear_vel" default="0.1" />
+    <arg name="look_ahead_dist" default="0.15" />
+    <arg name="max_linear_vel" default="0.07" />
     <arg name="max_angular_vel" default="0.1" />
     <!-- speed down parameters -->
-    <arg name="bvy" default="0.01" />
-    <arg name="bvz" default="0.01" />
-    <arg name="bvyaw" default="0.01" />
+    <arg name="bvy" default="0.03" />
+    <arg name="bvz" default="0.03" />
+    <arg name="bvyaw" default="0.03" />
     <!-- PD gain parameters -->
     <arg name="pgy" default="0.3" />
     <arg name="dgy" default="0.05" />
@@ -34,7 +34,7 @@
     <arg name="pgyaw" default="0.3" />
     <arg name="dgyaw" default="0.05" />
     <!-- If the positional displacement exceeds it, the path follower will publish zero velocities. -->
-    <arg name="displacement_threshold" default="0.2" />
+    <arg name="displacement_threshold" default="0.4" />
     <arg name="translation_scale" default="0.1" />
     <!-- This should be true.
          If not, the robot will immediately start following after launching this script. -->
