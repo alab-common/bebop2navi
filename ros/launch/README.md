@@ -8,13 +8,13 @@ $ roslaunch bebop_driver bebop_node.launch
 
 # Mapping
 
-To start mapping, you can launch **mapping.launch**. This script executes ORB SLAM2 as the SLAM mode and loads **bebop_slam.yaml** located at ros/src/orbslam-map-saving-extension/orb_slam2_ros/settings/. You can change parameters such as name of the map by editing the yaml file. The map will be automatically saved after killing the mapping process.
+To start mapping, you can launch **mapping.launch**. This script executes ORB SLAM2 as the SLAM mode and loads **bebop_slam.yaml** located at ros/src/orbslam-uncertainty-extension/orb_slam2_ros/settings/. You can change parameters such as name of the map by editing the yaml file. The map will be automatically saved after killing the mapping process.
 
 
 
 # Localization
 
-Once you built the map, you can use **localization.launch**. This script also executes ORB SLAM2 as the localization mode, that does not update the map. In addition, this script has a **use_pose_fuser** argument. If this is true, the pose fuser that fuses the ORB SLAM2 and Odometry estimates using Kalman filter is used as the localization module. To change localization parameters, please revise **bebop_localization.yaml** located at ros/src/orbslam-map-saving-extension/orb_slam2_ros/settings/.
+Once you built the map, you can use **localization.launch**. This script also executes ORB SLAM2 as the localization mode, that does not update the map. In addition, this script has a **use_pose_fuser** argument. If this is true, the pose fuser that fuses the ORB SLAM2 and Odometry estimates using Kalman filter is used as the localization module. To change localization parameters, please revise **bebop_localization.yaml** located at ros/src/orbslam-uncertainty-extension/orb_slam2_ros/settings/.
 
 
 
