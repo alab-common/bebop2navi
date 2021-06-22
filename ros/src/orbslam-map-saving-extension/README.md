@@ -1,6 +1,6 @@
 # ORB SLAM2 with pose uncertainty
 
-We extended [orbslam-map-saving-extension](https://github.com/TUMFTM/orbslam-map-saving-extension) to publish the estimated pose with the covariance matrix that represents uncertainty of the pose as a normal distribution. See [orbslam-map-saving-extension](https://github.com/TUMFTM/orbslam-map-saving-extension) for more details such as installation and dependencies.
+We extended [orbslam-map-saving-extension](https://github.com/TUMFTM/orbslam-map-saving-extension) to publish the estimated pose with uncertainty represented by the covariance matrix. In below, we describe important parts of this package. See [orbslam-map-saving-extension](https://github.com/TUMFTM/orbslam-map-saving-extension) for more details such as installation and dependencies.
 
 
 
