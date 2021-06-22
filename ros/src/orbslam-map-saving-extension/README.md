@@ -22,7 +22,7 @@ $$
 	-{\bf b}_{\rm l}
 \end{pmatrix},
 $$
-where subscripts ${\rm p}$ and ${\rm l}$ represent pose and landmark, $H$ is Hessian, $\Delta {\bf x}^{\*}$ is the increment, and ${\bf b}$ is the gradient. Hessian regarding the pose increment ${\bf x}={\rm p}^{\*}$ is formed by taking the Schur complement as
+where subscripts ${\rm p}$ and ${\rm l}$ represent pose and landmark, $H$ is Hessian, $\Delta {\bf x}^{*}$ is the increment, and ${\bf b}$ is the gradient. Hessian regarding the pose increment ${\bf x}_{\rm p}^{*}$ is formed by taking the Schur complement as
 $$
 (H_{\rm pp} - H_{\rm pl} H_{\rm ll} H_{\rm pl}^{-1}) \Delta {\bf x}_{p}^{*} = -{\bf b}_{\rm p} - H_{\rm pl} H_{\rm ll}^{-1} {\bf b}_{\rm l}.
 $$
