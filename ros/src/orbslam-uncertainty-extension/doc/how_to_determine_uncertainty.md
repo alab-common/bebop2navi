@@ -1,6 +1,6 @@
 # Determination of uncertainty
 
-In the camera pose tracking process of ORB SLAM2, [g2o](https://github.com/RainerKuemmerle/g2o) is used to solve the graph optimization problem. In the [g2o paper](https://www.researchgate.net/publication/224252449_G2o_A_general_framework_for_graph_optimization), the linear system for the optimization is introduced in equation (24)
+In the camera pose tracking process of ORB SLAM2, ${\rm g}^{2}{\rm o}$ is used to solve the graph optimization problem. In the ${\rm g}^{2}{\rm o}$ paper [2], the linear system for the optimization is introduced in equation (24)
 $$
 \begin{pmatrix}
 	H_{\rm pp}     & H_{\rm pl} \\
@@ -29,3 +29,9 @@ $$
 R = \frac{1}{\sigma^{2}} H^{-1},
 $$
 where $\sigma^{2}$ is the scale factor and is must be positive.
+
+
+
+[1] https://github.com/RainerKuemmerle/g2o
+
+[2] https://www.researchgate.net/publication/224252449_G2o_A_general_framework_for_graph_optimization
