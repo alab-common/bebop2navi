@@ -8,8 +8,12 @@ Panels:
         - /Status1
         - /TF1/Frames1
         - /TF1/Tree1
+        - /Grid1
+        - /ORB pose with covariance1
+        - /ORB pose with covariance1/Covariance1
+        - /ORB pose with covariance1/Covariance1/Position1
       Splitter Ratio: 0.5
-    Tree Height: 184
+    Tree Height: 244
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
@@ -42,46 +46,54 @@ Visualization Manager:
       Frames:
         All Enabled: false
         base_link:
-          Value: false
+          Value: true
         base_link2:
           Value: true
+        base_link3:
+          Value: true
         camera_base_link:
-          Value: false
+          Value: true
         camera_optical:
-          Value: false
+          Value: true
         camera_pan_link:
-          Value: false
+          Value: true
         camera_tilt_link:
-          Value: false
+          Value: true
         camera_world:
-          Value: false
+          Value: true
         fused_frame:
-          Value: false
+          Value: true
         map:
           Value: true
         odom:
-          Value: false
+          Value: true
         orb_slam2/frame:
-          Value: false
+          Value: true
         orb_slam2/map_frame:
-          Value: false
+          Value: true
       Marker Scale: 0.699999988079071
       Name: TF
       Show Arrows: false
       Show Axes: true
-      Show Names: true
+      Show Names: false
       Tree:
         camera_world:
           map:
+            base_link3:
+              {}
             fused_frame:
               base_link2:
                 {}
+        orb_slam2/frame:
+          {}
+        orb_slam2/map_frame:
+          {}
       Update Interval: 0
       Value: true
-    - Alpha: 0.5
-      Cell Size: 1
+    - Alpha: 1
+      Cell Size: 0.05000000074505806
       Class: rviz/Grid
-      Color: 160; 160; 164
+      Color: 0; 0; 0
       Enabled: true
       Line Style:
         Line Width: 0.029999999329447746
@@ -93,8 +105,8 @@ Visualization Manager:
         Y: 0
         Z: 0
       Plane: XY
-      Plane Cell Count: 10
-      Reference Frame: <Fixed Frame>
+      Plane Cell Count: 100
+      Reference Frame: orb_slam2/map_frame
       Value: true
     - Class: rviz/Image
       Enabled: false
@@ -132,7 +144,7 @@ Visualization Manager:
       Color: 255; 255; 255
       Color Transformer: FlatColor
       Decay Time: 0
-      Enabled: true
+      Enabled: false
       Invert Rainbow: false
       Max Color: 255; 255; 255
       Max Intensity: 4096
@@ -149,7 +161,7 @@ Visualization Manager:
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
-      Value: true
+      Value: false
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
@@ -162,7 +174,7 @@ Visualization Manager:
       Color: 239; 41; 41
       Color Transformer: FlatColor
       Decay Time: 0
-      Enabled: true
+      Enabled: false
       Invert Rainbow: false
       Max Color: 255; 255; 255
       Max Intensity: 4096
@@ -179,7 +191,7 @@ Visualization Manager:
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
-      Value: true
+      Value: false
     - Alpha: 1
       Buffer Length: 1
       Class: rviz/Path
@@ -264,7 +276,7 @@ Visualization Manager:
       Topic: /fused_pose
       Unreliable: false
       Value: false
-    - Alpha: 1
+    - Alpha: 0
       Axes Length: 1
       Axes Radius: 0.10000000149011612
       Class: rviz/PoseWithCovariance
@@ -277,14 +289,14 @@ Visualization Manager:
           Frame: Local
           Offset: 1
           Scale: 1
-          Value: true
+          Value: false
         Position:
-          Alpha: 0.30000001192092896
-          Color: 204; 51; 204
+          Alpha: 0.5
+          Color: 136; 138; 133
           Scale: 1
           Value: true
         Value: true
-      Enabled: false
+      Enabled: true
       Head Length: 0.029999999329447746
       Head Radius: 0.05000000074505806
       Name: ORB pose with covariance
@@ -293,12 +305,12 @@ Visualization Manager:
       Shape: Arrow
       Topic: /orb_slam2/pose
       Unreliable: false
-      Value: false
+      Value: true
   Enabled: true
   Global Options:
-    Background Color: 48; 48; 48
+    Background Color: 255; 255; 255
     Default Light: true
-    Fixed Frame: map
+    Fixed Frame: orb_slam2/map_frame
     Frame Rate: 30
   Name: root
   Tools:
@@ -321,38 +333,33 @@ Visualization Manager:
   Value: true
   Views:
     Current:
-      Class: rviz/Orbit
-      Distance: 1.0057358741760254
+      Angle: -1.5707963705062866
+      Class: rviz/TopDownOrtho
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
-      Focal Point:
-        X: 0
-        Y: 0
-        Z: 0
-      Focal Shape Fixed Size: true
-      Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.26479730010032654
+      Scale: 600.0465087890625
       Target Frame: base_link2
-      Value: Orbit (rviz)
-      Yaw: 2.9549996852874756
+      Value: TopDownOrtho (rviz)
+      X: 0
+      Y: 0
     Saved: ~
 Window Geometry:
   Bebop image raw:
     collapsed: false
   Displays:
     collapsed: false
-  Height: 615
+  Height: 717
   Hide Left Dock: false
   Hide Right Dock: true
   ORB SLAM tracking image:
     collapsed: false
-  QMainWindow State: 000000ff00000000fd0000000400000000000001f7000001a7fc020000000afb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000b0fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000003d000000f5000000c900fffffffb0000002e004f0052004200200053004c0041004d00200074007200610063006b0069006e006700200069006d0061006700650100000138000000ac0000001600fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000001e004200650062006f007000200069006d00610067006500200072006100770000000247000000bf0000001600ffffff000000010000015f0000020dfc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073000000003d0000020d000000a400fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e100000197000000030000047d00000060fc0100000002fb0000000800540069006d006501000000000000047d000002eb00fffffffb0000000800540069006d0065010000000000000450000000000000000000000280000001a700000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd0000000400000000000001f70000020dfc020000000afb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000b0fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000003d00000131000000c900fffffffb0000002e004f0052004200200053004c0041004d00200074007200610063006b0069006e006700200069006d0061006700650100000174000000d60000001600fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000001e004200650062006f007000200069006d00610067006500200072006100770000000247000000bf0000001600ffffff000000010000015f00000309fc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073000000003d00000309000000a400fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e100000197000000030000047d00000060fc0100000002fb0000000800540069006d006501000000000000047d000002eb00fffffffb0000000800540069006d00650100000000000004500000000000000000000002800000020d00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Time:
@@ -362,5 +369,5 @@ Window Geometry:
   Views:
     collapsed: true
   Width: 1149
-  X: 451
-  Y: 349
+  X: 317
+  Y: 231

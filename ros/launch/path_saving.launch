@@ -1,6 +1,6 @@
 <!-- path saving launch -->
 <launch >
-    <arg name="path_file" default="$(find path_follower)/data/kkzt_run.txt" />
+    <arg name="path_file" default="$(find path_follower)/data/kkzt_run_trajectory.txt" />
     <arg name="input_path_topic_name" default="/recorded_path" />
 
     <include file="$(find path_follower)/launch/path_saver.launch" >

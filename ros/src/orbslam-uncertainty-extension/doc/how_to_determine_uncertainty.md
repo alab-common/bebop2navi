@@ -1,6 +1,6 @@
 # Determination of uncertainty
 
-In the camera pose tracking process of ORB SLAM2, ${\rm g}^{2}{\rm o}$ is used to solve the graph optimization problem. In the ${\rm g}^{2}{\rm o}$ paper [2], the linear system for the optimization is introduced in equation (24)
+In the camera pose tracking process of ORB SLAM2, ${\rm g}^{2}{\rm o}$ [1] is used to solve the graph optimization problem. In the ${\rm g}^{2}{\rm o}$ paper [2], the linear system for the optimization is introduced in equation (24)
 $$
 \begin{pmatrix}
 	H_{\rm pp}     & H_{\rm pl} \\
@@ -20,7 +20,7 @@ where subscripts ${\rm p}$ and ${\rm l}$ represent pose and landmark, $H$ is Hes
 $$
 (H_{\rm pp} - H_{\rm pl} H_{\rm ll} H_{\rm pl}^{-1}) \Delta {\bf x}_{\rm p}^{*} = -{\bf b}_{\rm p} - H_{\rm pl} H_{\rm ll}^{-1} {\bf b}_{\rm l}.
 $$
-This is equation (25) of the g2o paper. Here, we define $H$ as
+This is equation (25) of the ${\rm g}^{2}{\rm o}$ paper. Here, we define $H$ as
 $$
 H \overset{\text{def}}{=} H_{\rm pp} - H_{\rm pl} H_{\rm ll} H_{\rm pl}^{-1}.
 $$
@@ -28,7 +28,7 @@ Then, we determine the uncertainty, i.e., covariance matrix, of the estimate by 
 $$
 R = \frac{1}{\sigma^{2}} H^{-1},
 $$
-where $\sigma^{2}$ is the scale factor and is must be positive.
+where $\sigma^{2}$ is the scale factor and must be positive.
 
 
 

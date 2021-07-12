@@ -125,7 +125,7 @@ void PathRecorder::spin(void)
             path.header.stamp = pose.header.stamp = ros::Time::now();
             path.poses.push_back(pose);
             path_pub.publish(path);
-            printf("Recorded path at: x = %.3lf [m], y = %.3lf [m], z = %.3lf, yaw = %lf [deg]\n", x, y, z, yaw * 180.0 / M_PI);
+            printf("Recorded path at: x = %.3lf [m], y = %.3lf [m], z = %.3lf, yaw = %.3lf [deg]\n", x, y, z, yaw * 180.0 / M_PI);
             xo = x;
             yo = y;
             zo = z;

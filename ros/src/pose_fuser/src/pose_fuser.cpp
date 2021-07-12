@@ -267,10 +267,10 @@ void PoseFuser::KalmanFilter(Eigen::VectorXd currPose, Eigen::Matrix<double, 6, 
         isFirst = false;
     }
     
-    // when trace of covariance matix is small, exit Kalman filter
-    if (currCovMat.trace() < 0.0001f){
+    // do not perform Kalman filter if the trace of the
+    // covariance matrix is small to prevent mis-convergence 
+    if (currCovMat.trace() < 0.0001)
         return;
-    }
 
     Eigen::MatrixXd KalmanGain(6,6), outputMat(6,6), slamCovMat(6,6), fusedCovMat(6,6);
     Eigen::MatrixXd I = Eigen::MatrixXd::Identity(6,6);
@@ -313,9 +313,8 @@ void PoseFuser::KalmanFilter(Eigen::VectorXd currPose, Eigen::Matrix<double, 6, 
     // covariance matrix of pose from slam
     for (int i = 0; i < 6; i++) {
         for (int j = 0; j < 6; j++)
-        slamCovMat(i, j) = slamMsg.pose.covariance[i * 6 + j];
+            slamCovMat(i, j) = slamMsg.pose.covariance[i * 6 + j];
     }
-    // slamCovMat = 0.1 * I;
 
     // transform covariance matrix from camera to map
     Eigen::Matrix3d JacobiMatRPY = mat_generator::get_transform_matrix_RPY(slamAttitude);
@@ -341,6 +340,21 @@ void PoseFuser::KalmanFilter(Eigen::VectorXd currPose, Eigen::Matrix<double, 6, 
     modifyRPY(&pose_(3), &pose_(4), &pose_(5));
     
     covMat_ = (I - KalmanGain * outputMat) * currCovMat;
+
+    if (true) {
+        double time = slamMsg.header.stamp.toSec();
+        double dx = pose_(0) - slamPose(0);
+        double dy = pose_(1) - slamPose(1);
+        double dz = pose_(2) - slamPose(2);
+        double droll = pose_(3) - slamPose(3);
+        double dpitch = pose_(4) - slamPose(4);
+        double dyaw = pose_(5) - slamPose(5);
+        modifyRPY(&droll, &dpitch, &dyaw);
+        static FILE *fp;
+        if (fp == NULL)
+            fp = fopen("/tmp/diff_est_slam.txt", "w");
+        fprintf(fp, "%lf %lf %lf %lf %lf %lf %lf\n", time, dx, dy, dz, droll, dpitch, dyaw);
+    }
 }
 
 void PoseFuser::publishMassages(void){
